@@ -1,17 +1,17 @@
 /**
- * defineHost() factory — the single place the copy-paste across hosts/*.ts
- * used to live.
+ * defineHost() 工厂 —— 过去散落在 hosts/*.ts 里复制粘贴的那份逻辑,
+ * 现在只存在这一处。
  *
- * Every field a host doesn't override gets the common external-host default:
- * paths derived from the host name (`.{name}/skills/gstack`), allowlist
- * frontmatter (name + description), no metadata sidecar, skip the codex
- * skill, the standard three-entry pathRewrite trio derived from the resolved
- * paths, the shared runtimeRoot asset list, and symlink-generated install.
+ * host 未覆盖的每个字段都取通用外部 host 默认值:
+ * 路径由 host 名派生(`.{name}/skills/gstack`)、allowlist frontmatter
+ * (name + description)、无元数据附属文件、跳过 codex skill、由解析路径
+ * 派生的标准三条 pathRewrite、共享的 runtimeRoot 资源列表,
+ * 以及 symlink-generated 安装策略。
  *
- * Defaults are constructed fresh per call, so no two host configs ever share
- * a mutable array/object. Optional fields that are absent today (toolRewrites,
- * coAuthorTrailer, boundaryInstruction) stay absent unless a host explicitly
- * sets them — the factory never default-populates optional fields.
+ * 默认值每次调用都全新构造,因此任意两个 host 配置绝不会共享同一个
+ * 可变数组/对象。当前缺省的可选字段(toolRewrites、coAuthorTrailer、
+ * boundaryInstruction)除非 host 显式设置,否则保持缺省 ——
+ * 工厂绝不给可选字段塞默认值。
  */
 
 import type { HostConfig } from '../scripts/host-config';
@@ -19,22 +19,22 @@ import type { HostConfig } from '../scripts/host-config';
 type PathRewrite = { from: string; to: string };
 
 /**
- * Preamble resolvers that orchestrate cross-model second opinions (they shell
- * out to Codex or spin up the review army). Suppressed on hosts that can't or
- * shouldn't invoke other models — Codex itself (can't invoke itself) and the
- * non-Claude agent runtimes (OpenClaw, Hermes, GBrain).
+ * 编排跨模型第二意见的前导 resolver(它们会 shell 出 Codex 或拉起
+ * review army)。在不能或不应调用其他模型的 host 上被抑制 ——
+ * Codex 自己(不能调用自己)以及非 Claude 的 agent 运行时
+ * (OpenClaw、Hermes、GBrain)。
  */
 export const CROSS_MODEL_RESOLVERS: string[] = [
-  'DESIGN_OUTSIDE_VOICES',  // design.ts — invokes Codex for outside voices
-  'ADVERSARIAL_STEP',       // review.ts — invokes Codex adversarially
-  'CODEX_SECOND_OPINION',   // review.ts — invokes Codex
-  'CODEX_PLAN_REVIEW',      // review.ts — invokes Codex
-  'REVIEW_ARMY',            // review-army.ts — multi-model orchestration
+  'DESIGN_OUTSIDE_VOICES',  // design.ts —— 调 Codex 获取外部声音
+  'ADVERSARIAL_STEP',       // review.ts —— 对抗式调用 Codex
+  'CODEX_SECOND_OPINION',   // review.ts —— 调 Codex
+  'CODEX_PLAN_REVIEW',      // review.ts —— 调 Codex
+  'REVIEW_ARMY',            // review-army.ts —— 多模型编排
 ];
 
 /**
- * Brain-aware resolvers. Suppressed by default on every host — only hosts
- * that can run with a GBrain (hermes, gbrain) leave these active.
+ * brain 感知 resolver。默认在每个 host 上抑制 ——
+ * 只有能与 GBrain 配合运行的 host(hermes、gbrain)保持激活。
  */
 export const GBRAIN_RESOLVERS: string[] = [
   'GBRAIN_CONTEXT_LOAD',
@@ -42,10 +42,9 @@ export const GBRAIN_RESOLVERS: string[] = [
 ];
 
 /**
- * Tool-name rewrites for OpenClaw-style agent runtimes (lowercase exec /
- * read / write / edit tools, sessions_spawn for subagents). OpenClaw and
- * GBrain share these byte-for-byte; spread into `toolRewrites` at the use
- * site so each config owns its own copy.
+ * OpenClaw 风格 agent 运行时的工具名改写(小写 exec / read / write / edit
+ * 工具,子 agent 用 sessions_spawn)。OpenClaw 与 GBrain 逐字节共享这份表;
+ * 在使用点展开进 `toolRewrites`,让每个配置持有自己的副本。
  */
 export const EXEC_STYLE_TOOL_REWRITES: Record<string, string> = {
   'use the Bash tool': 'use the exec tool',
@@ -62,21 +61,21 @@ export const EXEC_STYLE_TOOL_REWRITES: Record<string, string> = {
 };
 
 /**
- * Host definition input: name + displayName are required, everything else is
- * an override on the common external-host defaults documented above.
+ * host 定义入参:name + displayName 必填,其余字段都是对上文
+ * 通用外部 host 默认值的覆盖。
  *
- * `extraPathRewrites` appends to the derived standard trio
- * (`~/.claude/skills/gstack` → `~/{globalRoot}`, `.claude/skills/gstack` →
- * localSkillRoot, `.claude/skills` → `{hostSubdir}/skills`). Hosts whose
- * rewrites aren't mechanically derivable (codex, factory use $GSTACK_ROOT and
- * an extra review rewrite; claude has none) replace the whole list via
- * `pathRewrites` instead. The two are mutually exclusive.
+ * `extraPathRewrites` 追加到派生的标准三元组之后
+ * (`~/.claude/skills/gstack` → `~/{globalRoot}`,`.claude/skills/gstack` →
+ * localSkillRoot,`.claude/skills` → `{hostSubdir}/skills`)。改写规则
+ * 无法机械派生的 host(codex、factory 用 $GSTACK_ROOT 并附加一条
+ * review 改写;claude 没有改写)改用 `pathRewrites` 整体替换该列表。
+ * 两者互斥。
  */
 export interface HostOverrides<N extends string = string>
   extends Partial<Omit<HostConfig, 'name' | 'displayName'>> {
   name: N;
   displayName: string;
-  /** Appended after the derived pathRewrite trio. Mutually exclusive with `pathRewrites`. */
+  /** 追加在派生的 pathRewrite 三元组之后。与 `pathRewrites` 互斥。 */
   extraPathRewrites?: PathRewrite[];
 }
 
@@ -90,7 +89,7 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
     globalRoot = `.${name}/skills/gstack`,
     localSkillRoot = `.${name}/skills/gstack`,
     hostSubdir = `.${name}`,
-    usesEnvVars = true,  // false only for Claude (literal ~ paths, no $GSTACK_ROOT)
+    usesEnvVars = true,  // 仅 Claude 为 false(字面 ~ 路径,不使用 $GSTACK_ROOT)
     frontmatter = {
       mode: 'allowlist',
       keepFields: ['name', 'description'],
@@ -98,7 +97,7 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
     },
     generation = {
       generateMetadata: false,
-      skipSkills: ['codex'],  // Codex skill is a Claude wrapper around codex exec
+      skipSkills: ['codex'],  // codex skill 是包装 codex exec 的 Claude 专用件
     },
     pathRewrites,
     extraPathRewrites,
@@ -132,10 +131,9 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
     ...(extraPathRewrites ?? []),
   ];
 
-  // Field order below mirrors the HostConfig interface (and the original
-  // hand-written configs) so serialized output is stable. Optional fields are
-  // conditionally spread so absent overrides stay truly absent (no
-  // `key: undefined` entries).
+  // 下方字段顺序镜像 HostConfig 接口(以及最初的手写配置),
+  // 保证序列化输出稳定。可选字段用条件展开,未覆盖的项保持真正缺席
+  // (不产生 `key: undefined` 条目)。
   return {
     name,
     displayName,
