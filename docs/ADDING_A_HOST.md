@@ -1,17 +1,15 @@
-# Adding a New Host to gstack
+> 🌐 本文档由 [garrytan/gstack](https://github.com/garrytan/gstack) 翻译,英文原版见原项目。
 
-gstack uses a declarative host config system. Each supported AI coding agent
-(Claude, Codex, Factory, Kiro, OpenCode, Slate, Cursor, OpenClaw, Hermes,
-GBrain) is defined as a typed TypeScript config object built by the
-`defineHost()` factory. Adding a new host means creating one file and
-re-exporting it. Zero code changes to the generator, setup, or tooling.
+# 为 gstack 接入新 Host
 
-## How it works
+gstack 采用声明式 host 配置系统。每个受支持的 AI 编码 agent(Claude、Codex、Factory、Kiro、OpenCode、Slate、Cursor、OpenClaw、Hermes、GBrain)都定义为由 `defineHost()` 工厂构建的类型化 TypeScript 配置对象。接入新 host 只需新建一个文件并重新导出,生成器、setup、工具链代码零改动。
+
+## 工作原理
 
 ```
 hosts/
-├── define-host.ts   # defineHost() factory: shared defaults + derived fields
-├── claude.ts        # Primary host
+├── define-host.ts   # defineHost() 工厂:共享默认值 + 派生字段
+├── claude.ts        # 主 host
 ├── codex.ts         # OpenAI Codex CLI
 ├── factory.ts       # Factory Droid
 ├── kiro.ts          # Amazon Kiro
@@ -21,29 +19,24 @@ hosts/
 ├── openclaw.ts      # OpenClaw
 ├── hermes.ts        # Hermes (Nous Research)
 ├── gbrain.ts        # GBrain
-└── index.ts         # Registry: imports all, derives Host type
+└── index.ts         # 注册表:统一导入,派生 Host 类型
 ```
 
-Each config file calls `defineHost()` and exports the resulting `HostConfig`
-object, which tells the generator:
-- Where to put generated skills (paths)
-- How to transform frontmatter (allowlist/denylist fields)
-- What Claude-specific references to rewrite (paths, tool names)
-- What binary to detect for auto-install
-- What resolver sections to suppress
-- What assets to symlink at install time
+每个配置文件调用 `defineHost()` 并导出得到的 `HostConfig` 对象,它告诉生成器:
+- 生成的 skill 放哪里(路径)
+- 如何转换 frontmatter(字段白名单/黑名单)
+- 需要改写哪些 Claude 特有引用(路径、工具名)
+- 自动安装时检测哪个二进制
+- 抑制哪些 resolver 章节
+- 安装时软链哪些资源
 
-The generator, setup script, platform-detect, uninstall, health checks, worktree
-copy, and tests all read from these configs. None of them have per-host code.
+生成器、setup 脚本、平台检测、卸载、健康检查、worktree 复制、测试全部读取这些配置,没有任何一处写死某个 host 的代码。
 
-## Step-by-step: add a new host
+## 分步操作:接入新 host
 
-### 1. Create the config file
+### 1. 创建配置文件
 
-Configs are built with the `defineHost()` factory in `hosts/define-host.ts`.
-You only write the fields that differ from the common external-host defaults;
-everything else is derived from the host name. A fully-default host is two
-fields (see `hosts/slate.ts` or `hosts/cursor.ts`):
+配置通过 `hosts/define-host.ts` 中的 `defineHost()` 工厂构建。你只需写与通用外部 host 默认值不同的字段,其余全部由 host 名派生。一个全默认 host 只有两个字段(参见 `hosts/slate.ts` 或 `hosts/cursor.ts`):
 
 ```typescript
 import { defineHost } from './define-host';
@@ -56,127 +49,114 @@ const myhost = defineHost({
 export default myhost;
 ```
 
-That expands to the full `HostConfig` with these defaults:
+它会展开为带以下默认值的完整 `HostConfig`:
 
-- `cliCommand: 'myhost'` (the name; binary for `command -v` detection)
+- `cliCommand: 'myhost'`(即 name;用于 `command -v` 检测的二进制名)
 - `cliAliases: []`
-- `defaultModel: 'claude'` (model overlay used when generation gets no explicit `--model`; codex overrides to `'gpt'`)
-- `globalRoot` / `localSkillRoot`: `.myhost/skills/gstack`, `hostSubdir`: `.myhost`
-- `usesEnvVars: true` (false only for Claude, which uses literal `~` paths)
-- `frontmatter`: allowlist keeping `name` + `description`, no description limit
-- `generation`: no metadata file, `skipSkills: ['codex']` (codex skill is Claude-only)
-- `pathRewrites`: the standard trio derived from the resolved paths
-  (`~/.claude/skills/gstack` → `~/{globalRoot}`, `.claude/skills/gstack` →
-  `{localSkillRoot}`, `.claude/skills` → `{hostSubdir}/skills`)
-- `suppressedResolvers`: the GBrain pair (`GBRAIN_CONTEXT_LOAD`, `GBRAIN_SAVE_RESULTS`)
-- `runtimeRoot`: the shared asset list (`bin`, `browse/dist`, `browse/bin`,
-  `gstack-upgrade`, `ETHOS.md` + review checklist files)
-- `install`: `{ linkingStrategy: 'symlink-generated' }`
+- `defaultModel: 'claude'`(生成时未显式传 `--model` 时使用的模型覆盖;codex 覆盖为 `'gpt'`)
+- `globalRoot` / `localSkillRoot`:`.myhost/skills/gstack`,`hostSubdir`:`.myhost`
+- `usesEnvVars: true`(仅 Claude 为 false,它使用字面 `~` 路径)
+- `frontmatter`:白名单保留 `name` + `description`,不限描述长度
+- `generation`:无元数据文件,`skipSkills: ['codex']`(codex skill 仅限 Claude)
+- `pathRewrites`:由解析后的路径派生的标准三元组
+  (`~/.claude/skills/gstack` → `~/{globalRoot}`,`.claude/skills/gstack` →
+  `{localSkillRoot}`,`.claude/skills` → `{hostSubdir}/skills`)
+- `suppressedResolvers`:GBrain 那一对(`GBRAIN_CONTEXT_LOAD`、`GBRAIN_SAVE_RESULTS`)
+- `runtimeRoot`:共享资源列表(`bin`、`browse/dist`、`browse/bin`、
+  `gstack-upgrade`、`ETHOS.md` + 评审清单文件)
+- `install`:`{ linkingStrategy: 'symlink-generated' }`
 - `learningsMode: 'basic'`
 
-Override any field by passing it to `defineHost()`. Two path-rewrite options:
+把任意字段传给 `defineHost()` 即可覆盖。路径改写有两个选项:
 
-- `extraPathRewrites`: appends entries AFTER the derived trio (e.g. kiro's
-  codex-path cleanup, or `{ from: 'CLAUDE.md', to: 'AGENTS.md' }` for
-  AGENTS.md hosts). Use this when the standard trio is right but you need more.
-- `pathRewrites`: replaces the derived list entirely. Only for non-mechanical
-  cases — codex and factory rewrite the global path to `$GSTACK_ROOT` and add
-  an extra review-path rewrite; claude has an empty list.
+- `extraPathRewrites`:在派生三元组**之后**追加条目(如 kiro 的 codex 路径清理,或 AGENTS.md host 的 `{ from: 'CLAUDE.md', to: 'AGENTS.md' }`)。标准三元组够用但还需要更多时用它。
+- `pathRewrites`:整体替换派生列表。只用于非机械性场景——codex 和 factory 把全局路径改写为 `$GSTACK_ROOT` 并附加一条评审路径改写;claude 的列表为空。
 
-The two are mutually exclusive (the factory throws if you pass both).
+两者互斥(同时传入工厂会抛错)。
 
-Shared constants exported from `define-host.ts` for spread-composition:
-`CROSS_MODEL_RESOLVERS` (the five Codex-invoking resolvers suppressed on
-hosts that can't invoke other models), `GBRAIN_RESOLVERS` (the default
-suppression pair), and `EXEC_STYLE_TOOL_REWRITES` (the OpenClaw-style
-lowercase-tool rewrites shared by openclaw and gbrain).
+`define-host.ts` 还导出可用于展开组合的共享常量:`CROSS_MODEL_RESOLVERS`(五个调用 Codex 的 resolver,在不具备跨模型调用能力的 host 上抑制)、`GBRAIN_RESOLVERS`(默认抑制对)、`EXEC_STYLE_TOOL_REWRITES`(openclaw 与 gbrain 共享的 OpenClaw 风格小写工具名改写)。
 
-Good examples: `hosts/opencode.ts` (path + runtimeRoot overrides),
-`hosts/factory.ts` (tool rewrites and conditional fields), `hosts/hermes.ts`
-(AGENTS.md host with custom tool rewrites and resolver composition).
+优秀范例:`hosts/opencode.ts`(路径 + runtimeRoot 覆盖)、`hosts/factory.ts`(工具改写与条件字段)、`hosts/hermes.ts`(带自定义工具改写与 resolver 组合的 AGENTS.md host)。
 
-### 2. Register in the index
+### 2. 注册到 index
 
-Edit `hosts/index.ts`:
+编辑 `hosts/index.ts`:
 
 ```typescript
 import myhost from './myhost';
 
-// Add to ALL_HOST_CONFIGS array:
+// 加入 ALL_HOST_CONFIGS 数组:
 export const ALL_HOST_CONFIGS: HostConfig[] = [
   claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain, myhost
 ];
 
-// Add to re-exports:
+// 加入重新导出:
 export { claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain, myhost };
 ```
 
-### 3. Add to .gitignore
+### 3. 加入 .gitignore
 
-Add `.myhost/` to `.gitignore` (generated skill docs are gitignored).
+把 `.myhost/` 加进 `.gitignore`(生成的 skill 文档不入库)。
 
-### 4. Generate and verify
+### 4. 生成并验证
 
 ```bash
-# Generate skill docs for the new host
+# 为新 host 生成 skill 文档
 bun run gen:skill-docs --host myhost
 
-# Verify output exists and has no .claude/skills leakage
+# 验证输出存在且无 .claude/skills 泄漏
 ls .myhost/skills/gstack-*/SKILL.md
 grep -r ".claude/skills" .myhost/skills/ | head -5
-# (should be empty)
+# (应为空)
 
-# Generate for all hosts (includes the new one)
+# 为所有 host 生成(含新 host)
 bun run gen:skill-docs --host all
 
-# Health dashboard shows the new host
+# 健康仪表盘会显示新 host
 bun run skill:check
 ```
 
-### 5. Run tests
+### 5. 跑测试
 
 ```bash
 bun test test/gen-skill-docs.test.ts
 bun test test/host-config.test.ts
 ```
 
-The parameterized smoke tests automatically pick up the new host. Zero test
-code to write. They verify: output exists, no path leakage, valid frontmatter,
-freshness check passes, codex skill excluded.
+参数化冒烟测试会自动纳入新 host,零测试代码要写。它们验证:输出存在、无路径泄漏、frontmatter 合法、新鲜度检查通过、codex skill 已排除。
 
-### 6. Update README.md
+### 6. 更新 README.md
 
-Add install instructions for the new host in the appropriate section.
+在相应章节补充新 host 的安装说明。
 
-## Config field reference
+## 配置字段参考
 
-See `scripts/host-config.ts` for the full `HostConfig` interface with JSDoc
-comments on every field.
+完整的 `HostConfig` 接口及逐字段 JSDoc 注释见 `scripts/host-config.ts`。
 
-Key fields:
+关键字段:
 
-| Field | Purpose |
+| 字段 | 用途 |
 |-------|---------|
-| `defaultModel` | Model overlay rendered when generation gets no explicit `--model` (validated against `ALL_MODEL_NAMES` in `scripts/models.ts`) |
-| `frontmatter.mode` | `allowlist` (keep only listed) or `denylist` (strip listed) |
-| `frontmatter.descriptionLimit` | Max chars, `null` for no limit |
-| `frontmatter.descriptionLimitBehavior` | `error` (fail build), `truncate`, `warn` |
-| `frontmatter.conditionalFields` | Add fields based on template values (e.g., sensitive → disable-model-invocation) |
-| `frontmatter.renameFields` | Rename template fields (e.g., voice-triggers → triggers) |
-| `pathRewrites` | Literal replaceAll on content. Order matters. Replaces the derived trio. |
-| `extraPathRewrites` | (defineHost input only) Appended after the derived trio. |
-| `toolRewrites` | Rewrite Claude tool names (e.g., "use the Bash tool" → "run this command") |
-| `suppressedResolvers` | Resolver functions that return empty for this host |
-| `coAuthorTrailer` | Git co-author string for commits |
-| `boundaryInstruction` | Anti-prompt-injection warning for cross-model invocations |
+| `defaultModel` | 生成时未显式传 `--model` 时渲染的模型覆盖(对照 `scripts/models.ts` 的 `ALL_MODEL_NAMES` 校验) |
+| `frontmatter.mode` | `allowlist`(只保留列出的)或 `denylist`(剔除列出的) |
+| `frontmatter.descriptionLimit` | 最大字符数,`null` 表示不限制 |
+| `frontmatter.descriptionLimitBehavior` | `error`(构建失败)、`truncate`、`warn` |
+| `frontmatter.conditionalFields` | 依据模板值追加字段(如 sensitive → disable-model-invocation) |
+| `frontmatter.renameFields` | 重命名模板字段(如 voice-triggers → triggers) |
+| `pathRewrites` | 对内容做字面 replaceAll,顺序敏感;整体替换派生三元组 |
+| `extraPathRewrites` | (仅 defineHost 入参)追加在派生三元组之后 |
+| `toolRewrites` | 改写 Claude 工具名(如 "use the Bash tool" → "run this command") |
+| `suppressedResolvers` | 对该 host 返回空的 resolver 函数 |
+| `coAuthorTrailer` | 提交时的 Git co-author 字符串 |
+| `boundaryInstruction` | 跨模型调用的防提示注入警告 |
 
-## Validation
+## 校验
 
-The `validateHostConfig()` function in `scripts/host-config.ts` checks:
-- Name: lowercase alphanumeric with hyphens
-- CLI command: alphanumeric with hyphens/underscores
-- `defaultModel`: must be a known model family from `scripts/models.ts` `ALL_MODEL_NAMES`
-- Paths: safe characters only (alphanumeric, `.`, `/`, `$`, `{}`, `~`, `-`, `_`)
-- No duplicate names, hostSubdirs, or globalRoots across configs
+`scripts/host-config.ts` 中的 `validateHostConfig()` 检查:
+- 名称:小写字母数字加连字符
+- CLI 命令:字母数字加连字符/下划线
+- `defaultModel`:必须是 `scripts/models.ts` `ALL_MODEL_NAMES` 中的已知模型族
+- 路径:仅限安全字符(字母数字、`.`、`/`、`$`、`{}`、`~`、`-`、`_`)
+- 所有配置之间无重复的名称、hostSubdir、globalRoot
 
-Run `bun run scripts/host-config-export.ts validate` to check all configs.
+运行 `bun run scripts/host-config-export.ts validate` 检查全部配置。

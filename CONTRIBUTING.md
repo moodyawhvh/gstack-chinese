@@ -1,551 +1,299 @@
-# Contributing to gstack
+> 🌐 本文档由 [garrytan/gstack](https://github.com/garrytan/gstack) 翻译,英文原版见原项目。
 
-Thanks for wanting to make gstack better. Whether you're fixing a typo in a skill prompt or building an entirely new workflow, this guide will get you up and running fast.
+> 注:本文件篇幅较长,此处仅翻译核心章节;完整细节请参阅英文原版 CONTRIBUTING.md。
 
-## Quick start
+# 参与贡献 gstack
 
-gstack skills are Markdown files that Claude Code discovers from a `skills/` directory. Normally they live at `~/.claude/skills/gstack/` (your global install). But when you're developing gstack itself, you want Claude Code to use the skills *in your working tree* — so edits take effect instantly without copying or deploying anything.
+感谢你愿意让 gstack 变得更好。无论是修一个 skill 提示词里的错别字,还是构建一套全新的工作流,本指南都能帮你快速上手。
 
-That's what dev mode does. It symlinks your repo into the local `.claude/skills/` directory so Claude Code reads skills straight from your checkout.
+## 快速开始
+
+gstack 的 skill 是 Markdown 文件,Claude Code 从 `skills/` 目录中发现它们。通常位于 `~/.claude/skills/gstack/`(全局安装)。但在开发 gstack 本身时,你希望 Claude Code 使用**工作区里的** skill——这样改动立即生效,无需复制或部署。
+
+这就是开发模式(dev mode)的作用:它把你的仓库软链接到本地 `.claude/skills/` 目录,Claude Code 直接从你的 checkout 读取 skill。
 
 ```bash
 git clone https://github.com/garrytan/gstack.git && cd gstack
-bun install                    # install dependencies
-bin/dev-setup                  # activate dev mode
+bun install                    # 安装依赖
+bin/dev-setup                  # 激活开发模式
 ```
 
-> **Full clone vs shallow.** The README's user-facing install uses `--depth 1` for speed. As a contributor, use a full clone (no `--depth` flag) — you'll need history for `git log`, `git blame`, `git bisect`, and reviewing PRs against earlier versions. If you already have a `--depth 1` clone from following the README, promote it to a full clone with `git fetch --unshallow`.
+> **完整克隆 vs 浅克隆。** README 里面向用户的安装用 `--depth 1` 提速。作为贡献者,请用完整克隆(不加 `--depth`)——你需要完整历史来执行 `git log`、`git blame`、`git bisect`,以及对照早期版本审查 PR。如果已经按 README 建了 `--depth 1` 克隆,用 `git fetch --unshallow` 升级为完整克隆。
 
-Now edit any `SKILL.md`, invoke it in Claude Code (e.g. `/review`), and see your changes live. When you're done developing:
+现在随便编辑一个 `SKILL.md`,在 Claude Code 里调用(比如 `/review`),即可实时看到改动。开发结束时:
 
 ```bash
-bin/dev-teardown               # deactivate — back to your global install
+bin/dev-teardown               # 退出开发模式,恢复全局安装
 ```
 
-## Operational self-improvement
+## 运营式自我改进
 
-gstack automatically learns from failures. At the end of every skill session, the agent
-reflects on what went wrong (CLI errors, wrong approaches, project quirks) and logs
-operational learnings to `~/.gstack/projects/{slug}/learnings.jsonl`. Future sessions
-surface these learnings automatically, so gstack gets smarter on your codebase over time.
+gstack 会自动从失败中学习。每次 skill 会话结束时,agent 会反思哪里出了问题(CLI 报错、错误做法、项目怪癖),并把运营经验写入 `~/.gstack/projects/{slug}/learnings.jsonl`。后续会话会自动呈现这些经验,gstack 在你的代码库上会越用越聪明。
 
-No setup needed. Learnings are logged automatically. View them with `/learn`.
+无需任何配置,经验自动记录,用 `/learn` 查看。
 
-### The contributor workflow
+### 贡献者工作流
 
-1. **Use gstack normally** — operational learnings are captured automatically
-2. **Check your learnings:** `/learn` or `ls ~/.gstack/projects/*/learnings.jsonl`
-3. **Fork and clone gstack** (if you haven't already)
-4. **Symlink your fork into the project where you hit the bug:**
+1. **正常使用 gstack** —— 运营经验自动捕获
+2. **查看你的经验:** `/learn` 或 `ls ~/.gstack/projects/*/learnings.jsonl`
+3. **Fork 并克隆 gstack**(如果还没做)
+4. **把你的 fork 软链接到踩到 bug 的项目里:**
    ```bash
-   # In your core project (the one where gstack annoyed you)
+   # 在你的核心项目里(gstack 惹到你的那个)
    ln -sfn /path/to/your/gstack-fork .claude/skills/gstack
    cd .claude/skills/gstack && bun install && bun run build && ./setup
    ```
-   Setup creates per-skill directories with SKILL.md symlinks inside (`qa/SKILL.md -> gstack/qa/SKILL.md`),
-   links each skill's runtime assets alongside (sections/, templates, checklists — everything except
-   SKILL.md, tests, build output, and `.tmpl` sources), and asks your prefix preference.
-   Pass `--no-prefix` to skip the prompt and use short names.
-5. **Fix the issue** — your changes are live immediately in this project
-6. **Test by actually using gstack** — do the thing that annoyed you, verify it's fixed
-7. **Open a PR from your fork**
+   setup 会为每个 skill 创建目录并在里面放 SKILL.md 软链接(`qa/SKILL.md -> gstack/qa/SKILL.md`),同时把各 skill 的运行时资源(sections/、模板、清单——SKILL.md、测试、构建产物、`.tmpl` 源文件除外)一并链接过去,并询问你的前缀偏好。传 `--no-prefix` 可跳过询问,直接用短名。
+5. **修复问题** —— 你的改动在该项目中立即生效
+6. **真实使用来测试** —— 重做一遍惹恼你的操作,确认已修复
+7. **从 fork 发起 PR**
 
-This is the best way to contribute: fix gstack while doing your real work, in the
-project where you actually felt the pain.
+这是最好的贡献方式:在真实工作、真实感到痛点的地方顺手修掉 gstack 的问题。
 
-### Session awareness
+### 会话感知
 
-When you have 3+ gstack sessions open simultaneously, every question tells you which project, which branch, and what's happening. No more staring at a question thinking "wait, which window is this?" The format is consistent across all skills.
+同时开 3 个以上 gstack 会话时,每个问题都会注明属于哪个项目、哪个分支、正在做什么。再也不用盯着问题发呆:"等等,这是哪个窗口?"所有 skill 的格式保持一致。
 
-## Working on gstack inside the gstack repo
-
-When you're editing gstack skills and want to test them by actually using gstack
-in the same repo, `bin/dev-setup` wires this up. It creates `.claude/skills/`
-symlinks (gitignored) pointing back to your working tree, so Claude Code uses
-your local edits instead of the global install.
-
-```
-gstack/                          <- your working tree
-├── .claude/skills/              <- created by dev-setup (gitignored)
-│   ├── gstack -> ../../         <- symlink back to repo root
-│   ├── review/                  <- real directory (short name, default)
-│   │   └── SKILL.md -> gstack/review/SKILL.md
-│   ├── ship/                    <- or gstack-review/, gstack-ship/ if --prefix
-│   │   └── SKILL.md -> gstack/ship/SKILL.md
-│   └── ...                      <- one directory per skill
-├── review/
-│   └── SKILL.md                 <- edit this, test with /review
-├── ship/
-│   └── SKILL.md
-├── browse/                      <- /browse skill + gstack's own browser engine (the fallback)
-│   ├── src/                     <- TypeScript source
-│   └── dist/                    <- compiled binary (gitignored)
-├── lib/
-│   └── aside-render.ts          <- local-HTML rendering: Aside first, browse engine fallback
-├── bin/
-│   └── gstack-render.ts         <- the CLI skills call to render a local HTML file
-└── ...
-```
-
-Setup creates real directories (not symlinks) at the top level with a SKILL.md
-symlink inside, plus links to each skill's runtime assets (sections/, templates,
-checklists). Alias skills (`_gstack-command`, `connect-chrome`) install as
-rewritten copies, never symlinks — editing a symlinked alias would corrupt the
-generated source. This ensures Claude discovers them as top-level skills, not nested
-under `gstack/`. Names depend on your prefix setting (`~/.gstack/config.yaml`).
-Short names (`/review`, `/ship`) are the default. Run `./setup --prefix` if you
-prefer namespaced names (`/gstack-review`, `/gstack-ship`).
-
-## Day-to-day workflow
+## 日常开发流程
 
 ```bash
-# 1. Enter dev mode
+# 1. 进入开发模式
 bin/dev-setup
 
-# 2. Edit a skill template (SKILL.md files are generated — edit the .tmpl)
+# 2. 编辑 skill 模板(SKILL.md 是生成物——改 .tmpl)
 vim review/SKILL.md.tmpl
-bun run gen:skill-docs   # or: bun run dev:skill (watch mode, auto-regen on change)
+bun run gen:skill-docs   # 或:bun run dev:skill(监听模式,改动自动重新生成)
 
-# 3. Test it in Claude Code — changes are live
+# 3. 在 Claude Code 中测试——改动即时生效
 #    > /review
 
-# 4. Editing browse source? Rebuild the binary
+# 4. 改了 browse 源码?重新构建二进制
 bun run build
 
-# 5. Done for the day? Tear down
+# 5. 今天收工?退出开发模式
 bin/dev-teardown
 ```
 
-### Brain-aware blocks in a dev workspace (gbrain installed)
+## 测试与评估
 
-If gbrain is installed and usable (`bin/gstack-gbrain-detect --is-ok` exits 0),
-`bin/dev-setup` keeps your tracked `SKILL.md` files canonical and renders the
-brain-aware variant (the `GBRAIN_CONTEXT_LOAD` / `GBRAIN_SAVE_RESULTS` blocks)
-into `.claude/gstack-rendered/` (gitignored, per-workspace). It then repoints the
-workspace's `SKILL.md` symlinks at that render, so your Claude sessions get the
-full gbrain experience while `git status` stays clean. Under the hood, dev-setup
-passes `GSTACK_SKIP_GBRAIN_REGEN=1` inline to the nested `./setup` (so it never
-dirties tracked source) and runs `gen:skill-docs:user --out-dir .claude/gstack-rendered`,
-which rewrites only the section-base paths to point at the render. `bin/dev-teardown`
-removes the render. To make the blocks live across your *other* projects' Claude
-sessions, run `gstack-config gbrain-refresh`, which renders them to a user render
-dir (`${GSTACK_USER_RENDER_DIR:-~/.gstack/render/claude}`, swapped in only on a
-successful render) and repoints the installed skills at it via `gstack-relink` —
-the global install checkout stays git-clean, and the refresh is guarded so it
-never touches a symlinked or non-gstack directory.
-
-## Testing & evals
-
-### Setup
+### 配置
 
 ```bash
-# 1. Copy .env.example and add your API key
+# 1. 复制 .env.example 并填入你的 API key
 cp .env.example .env
-# Edit .env → set ANTHROPIC_API_KEY=sk-ant-...
+# 编辑 .env → 设置 ANTHROPIC_API_KEY=sk-ant-...
 
-# 2. Install deps (if you haven't already)
+# 2. 安装依赖(如果还没装)
 bun install
 ```
 
-Bun auto-loads `.env` — no extra config. Conductor workspaces inherit `.env` from the main worktree automatically (see "Conductor workspaces" below).
+Bun 自动加载 `.env`,无需额外配置。Conductor 工作区会自动从主 worktree 继承 `.env`。
 
-### Test tiers
+### 测试分层
 
-| Tier | Command | Cost | What it tests |
-|------|---------|------|---------------|
-| 1 — Static | `bun run test` | Free | Command validation, snapshot flags, Aside contract pins, render-wrapper option mapping, SKILL.md correctness, TODOS-format.md refs, observability unit tests |
-| 2 — E2E | `bun run test:e2e` | ~$4.20 | Full skill execution via `claude -p` subprocess |
-| 3 — LLM eval | `EVALS=1 bun test test/skill-llm-eval.test.ts` | ~$0.15 standalone | LLM-as-judge scoring of generated SKILL.md docs |
-| 2+3 | `bun run test:evals` | ~$4 combined | E2E + LLM-as-judge (runs both) |
+| 层级 | 命令 | 成本 | 测试内容 |
+|------|------|------|----------|
+| 1 — 静态 | `bun run test` | 免费 | 命令校验、快照参数、Aside 契约、渲染包装器选项映射、SKILL.md 正确性、TODOS-format.md 引用、可观测性单元测试 |
+| 2 — E2E | `bun run test:e2e` | 约 $4.20 | 通过 `claude -p` 子进程完整执行 skill |
+| 3 — LLM 评估 | `EVALS=1 bun test test/skill-llm-eval.test.ts` | 单独约 $0.15 | 用 LLM-as-judge 给生成的 SKILL.md 打分 |
+| 2+3 | `bun run test:evals` | 合计约 $4 | E2E + LLM-as-judge(两者都跑) |
 
 ```bash
-bun run test                 # Tier 1 only (run before every commit, ~90-100s for the full ~8,700-test suite)
-bun run test:e2e             # Tier 2: E2E only (needs EVALS=1, can't run inside Claude Code)
-bun run test:evals           # Tier 2 + 3 combined (~$4.35/run)
+bun run test                 # 仅第 1 层(每次提交前都要跑,全套约 8700 个测试约 90-100 秒)
+bun run test:e2e             # 第 2 层:仅 E2E(需 EVALS=1,不能在 Claude Code 内运行)
+bun run test:evals           # 第 2+3 层合并(每次约 $4.35)
 ```
 
-### Tier 1: Static validation (free)
+### 第 1 层:静态校验(免费)
 
-Runs with `bun run test`, which routes through `scripts/test-free-shards.ts`: N
-concurrent shard processes under a strict output contract — a shard that exits
-without bun's own terminal summary line, or a crashed worker, fails the run, so
-silent truncation can never report green. Pass `--verbose` to forward the full
-child stream; `--wall-timeout <secs>` overrides the per-shard kill deadline.
-`GSTACK_FREE_JOBS=<n>` overrides the shard count (digits only, loud on garbage),
-and `GSTACK_FREE_RETRY_FLAKY=1` opts into one serial retry pass for
-syscall-supervised sandboxes (off by default locally — dev boxes should see
-flakes; the required CI free lane turns it on and uploads every flaky pass
-in a JSONL ledger artifact that `bun run eval:flake-rank` folds in).
-Working in a cloud sandbox? Run `scripts/sandbox-doctor.sh` once per boot to
-make the suite run green (details in
-[docs/TESTING_INTERNALS.md](docs/TESTING_INTERNALS.md)).
-Don't type bare `bun test` for the suite: it walks the whole repo, loads paid
-eval files, and misses the strict classifier. No API keys needed.
+通过 `bun run test` 运行,内部经由 `scripts/test-free-shards.ts` 调度:N 个并发分片进程受严格的输出契约约束——分片退出时没有 bun 的终端汇总行、或 worker 崩溃,整个运行即判失败,静默截断永远不可能报绿。传 `--verbose` 转发子进程完整输出;`--wall-timeout <秒>` 覆盖分片超时上限;`GSTACK_FREE_JOBS=<n>` 覆盖分片数;`GSTACK_FREE_RETRY_FLAKY=1` 为系统调用沙箱开启一次串行重试(本地默认关闭;CI 的免费通道会开启并把每次 flaky 通过记入 JSONL 账本,供 `bun run eval:flake-rank` 汇总)。在云沙箱工作?每次启动后跑一次 `scripts/sandbox-doctor.sh` 让测试套件全绿(详见 [docs/TESTING_INTERNALS.md](docs/TESTING_INTERNALS.md))。不要直接敲裸的 `bun test` 跑全套:它会遍历整个仓库、加载付费评估文件,还会绕过严格分类器。无需 API key。
 
-- **Skill parser tests** (`test/skill-parser.test.ts`) — Extracts every `$B` command from SKILL.md bash code blocks and validates against the command registry in `browse/src/commands.ts`. Catches typos, removed commands, and invalid snapshot flags.
-- **Skill validation tests** (`test/skill-validation.test.ts`) — Validates that SKILL.md files reference only real commands and flags, and that command descriptions meet quality thresholds. Also cross-checks the skill inventory in AGENTS.md and docs/skills.md.
-- **Aside driver contract** (`test/aside-driver.test.ts`) — Browser behaviour in skills is written against `scripts/resolvers/aside.ts` (`{{ASIDE_SETUP}}`) and verified live against the Aside CLI on a Mac. CI cannot run Aside, so the Aside E2E tests self-skip where `aside` is not installed; the static pins (detection, fallback hand-off, consent, credential, one-flow-per-script, sentinel) are what CI proves.
-- **Aside render wrapper** (`test/aside-render.test.ts`) — Pins the option mapping and generated script of `lib/aside-render.ts` everywhere, and drives both engines hermetically with fake `aside` / `browse` executables (probe classification, the stdout contract, loopback-server policy, failure paths, the timeout kill, engine choice and the mid-run fallback); the live render (PDF + screenshot through a real Aside) runs only where Aside is open and self-skips elsewhere. make-pdf's render gates (`make-pdf/test/e2e/*-gate.test.ts`) and `test/skill-e2e-diagram.test.ts` are engine-agnostic: they run through whichever engine resolves (`browserAvailable()` — Aside, or the browse binary `bun run build:gates` compiles, which is what Linux CI does) and skip only when neither exists.
-- **Render CLI** (`test/gstack-render-cli.test.ts`) — Pins `bin/gstack-render.ts` against a fake daemon (`GSTACK_SKIP_ASIDE=1` + `GSTACK_BROWSE_BIN`): argv guards exit 1 with the usage line, `--help` exits 0, `ENGINE=` first then `OK <path>` then fenced `EVAL` / `PAGE_ERRORS`, `--serve-root` containment, the no-browser first line, and prompt exit after a successful render. `make-pdf/test/cli-exit-codes.test.ts` and `make-pdf/test/setup-smoke.test.ts` pin the `pdf` binary's error-to-exit-code map and `$P setup`'s engine report.
-- **Generator tests** (`test/gen-skill-docs.test.ts`) — Tests the template system: verifies placeholders resolve correctly, output includes value hints for flags (e.g. `-d <N>` not just `-d`), enriched descriptions for key commands (e.g. `is` lists valid states, `press` lists key examples).
-- **Tier-alignment invariant** (`test/e2e-tier-alignment.test.ts`) — For every self-gated `test/skill-e2e-*.test.ts` named in a touchfiles dep list, the file's `EVALS_TIER` self-gate must match its declared tier in `E2E_TIERS`. Kills the "inert demotion" class where a test is re-tiered in `touchfiles.ts` but the file still gates on the old tier and keeps running in the wrong lane. Unmapped or mixed-tier files are reported, never silently skipped.
-- **Catalog budget** (`test/catalog-budget.test.ts`) — Caps the aggregate discovery surface: the sum of every skill's frontmatter `name` + `description` (what every host loads at discovery, every session) must stay under 1,150 token-equivalents, with a 260-byte per-skill cap. Counting goes through the shared census in `test/helpers/skill-census.ts` (physical files vs authored skills vs registry entries — three deliberately different counts). Adding a skill? The failure message carries the re-measure + ratchet protocol.
-- **Context-budget ratchet** (`test/context-budget-ratchet.test.ts`) — CI ceilings on the two token ledgers the catalog budget doesn't cover: the always-on full-frontmatter aggregate and each skill's per-invocation eager tokens (SKILL.md + forced-read references), graded against `test/fixtures/context-budget.json` via `lib/context-bill.ts`. New skills fail until they have a ceiling; ceilings for removed skills must be pruned. Legitimate growth or a landed reduction: re-run `bun test/helpers/capture-context-budget.ts` and commit the refreshed fixture in the same commit, so the change is a visible decision in the diff.
+### 第 2 层:`claude -p` E2E(每次约 $4.20)
 
-### Tier 2: E2E via `claude -p` (~$4.20/run)
-
-Spawns `claude -p` as a subprocess with `--output-format stream-json --verbose`, streams NDJSON for real-time progress, and scans for browse errors. This is the closest thing to "does this skill actually work end-to-end?"
+以 `--output-format stream-json --verbose` 启动 `claude -p` 子进程,流式读取 NDJSON 实时展示进度,并扫描 browse 错误。这是最接近"这个 skill 端到端到底能不能跑"的验证。
 
 ```bash
-# Must run from a plain terminal — can't nest inside Claude Code or Conductor
+# 必须在普通终端运行——不能嵌套在 Claude Code 或 Conductor 里
 EVALS=1 bun test test/skill-e2e-*.test.ts
 ```
 
-- Gated by `EVALS=1` env var (prevents accidental expensive runs)
-- Auto-skips if running inside Claude Code (`claude -p` can't nest)
-- API connectivity pre-check — fails fast on ConnectionRefused before burning budget
-- Real-time progress to stderr: `[Ns] turn T tool #C: Name(...)`
-- Saves full NDJSON transcripts and failure JSON for debugging
-- Tests live in `test/skill-e2e-*.test.ts` (split by category), runner logic in `test/helpers/session-runner.ts`
+- 由 `EVALS=1` 环境变量把门(防止意外烧钱)
+- 在 Claude Code 内自动跳过(`claude -p` 不能嵌套)
+- API 连通性预检——在烧预算前对 ConnectionRefused 快速失败
+- 实时进度输出到 stderr:`[Ns] turn T tool #C: Name(...)`
+- 保存完整 NDJSON 转录与失败 JSON 供调试
+- 测试位于 `test/skill-e2e-*.test.ts`(按类别拆分),运行器逻辑在 `test/helpers/session-runner.ts`
 
-**Hermetic by default.** Every E2E runner (claude -p, the real-PTY plan-mode
-runner, the Agent SDK runner, plus the codex and gemini runners) spawns its child
-through `test/helpers/hermetic-env.ts`: an allowlist-scrubbed environment, a fresh
-seeded `CLAUDE_CONFIG_DIR`, a temp `GSTACK_HOME`, and `--strict-mcp-config`. Your
-operator `~/.claude` config, MCP servers (gbrain, Conductor), skills, `~/.gstack`
-decision logs, and `CONDUCTOR_*` env never leak into the child, so local eval
-signal matches CI instead of disagreeing for reasons unrelated to the code under
-test. The hermetic `CLAUDE_CONFIG_DIR` seeds no skills by default; a PTY test
-that types a `/skill` slash command passes `seedSkills: true` to the PTY runner,
-which swaps in `hermeticSkillsConfigDir()` — a seeded skill registry that
-symlinks the LIVE working tree's SKILL.md files (by design: the skills are the
-subject under test, so a snapshot would measure stale copies). Set
-`EVALS_HERMETIC=0` to debug against your real operator state (this also
-drops `--strict-mcp-config`). The wiring is pinned by `test/hermetic-wiring.test.ts`
-(a free static tripwire), two gate-tier isolation canaries in
-`test/skill-e2e-hermetic-canary.test.ts`, and the skill-seeding tripwires in
-`test/hermetic-skills-seeding.test.ts` / `test/pty-skill-seeding-wiring.test.ts`.
+**默认封闭(hermetic)。** 每个 E2E 运行器都通过 `test/helpers/hermetic-env.ts` 启动子进程:白名单清洗过的环境变量、全新种子化的 `CLAUDE_CONFIG_DIR`、临时 `GSTACK_HOME` 和 `--strict-mcp-config`。你本机的 `~/.claude` 配置、MCP 服务器(gbrain、Conductor)、skill、`~/.gstack` 决策日志、`CONDUCTOR_*` 环境变量都不会泄漏进子进程,本地评估信号与 CI 一致。设 `EVALS_HERMETIC=0` 可对照真实环境调试。
 
-### E2E observability
+### E2E 可观测性
 
-When E2E tests run, they produce machine-readable artifacts in `~/.gstack-dev/`:
+E2E 测试运行时会在 `~/.gstack-dev/` 生成机器可读的工件:心跳(`e2e-live.json`)、部分结果(`evals/_partial-e2e.json`)、进度日志、NDJSON 转录、失败 JSON。在第二个终端运行 `bun run eval:watch` 可看到实时仪表盘(已完成测试、当前运行、成本),加 `--tail` 额外显示 progress.log 最后 10 行。
 
-| Artifact | Path | Purpose |
-|----------|------|---------|
-| Heartbeat | `e2e-live.json` | Current test status (updated per tool call) |
-| Partial results | `evals/_partial-e2e.json` | Completed tests (survives kills) |
-| Progress log | `e2e-runs/{runId}/progress.log` | Append-only text log |
-| NDJSON transcripts | `e2e-runs/{runId}/{test}.ndjson` | Raw `claude -p` output per test |
-| Failure JSON | `e2e-runs/{runId}/{test}-failure.json` | Diagnostic data on failure |
-
-**Live dashboard:** Run `bun run eval:watch` in a second terminal to see a live dashboard showing completed tests, the currently running test, and cost. Use `--tail` to also show the last 10 lines of progress.log.
-
-**Eval history tools:**
+评估历史工具:
 
 ```bash
-bun run eval:list            # list all eval runs (turns, duration, cost per run)
-bun run eval:compare         # compare two runs — shows per-test deltas + Takeaway commentary
-bun run eval:summary         # aggregate stats + per-test efficiency averages across runs
-bun run eval:flake-rank      # rank tests by flake signal: retried passes first, then failure rate (--json, --dir, --since-days)
+bun run eval:list            # 列出所有评估运行(轮次、时长、成本)
+bun run eval:compare         # 对比两次运行——逐测试差值 + Takeaway 点评
+bun run eval:summary         # 聚合统计 + 跨运行逐测试效率均值
+bun run eval:flake-rank      # 按 flake 信号排序:重试后通过者优先,其次失败率(--json, --dir, --since-days)
 ```
 
-**Detached runs for agents and long suites.** When an agent (or you, for a run
-you don't want to babysit) launches a long eval, use the `eval:bg*` scripts. They
-wrap the eval command in `bin/gstack-detach`: a fresh session that escapes a
-turn-boundary SIGTERM, a `caffeinate` wrapper that blocks idle-sleep, a machine-wide
-`gstack-evals` lock so concurrent worktrees serialize instead of saturating the
-model API, a run-scoped log under `~/.gstack-dev/eval-runs/`, a per-tier watchdog,
-and a guaranteed `### gstack-detach EXIT=<code> ###` sentinel so a poller never
-mistakes silence for success.
+**后台/分离运行。** agent 或长套件不想盯着时,用 `eval:bg*` 脚本。它们通过 `bin/gstack-detach` 包装评估命令:绕过轮次边界的 SIGTERM、`caffeinate` 防休眠、机器级 `gstack-evals` 锁让并发工作区串行化、运行级日志、分层看门狗,以及保证输出的 `### gstack-detach EXIT=<code> ###` 哨兵行(轮询方不会把沉默误判为成功)。
 
 ```bash
-bun run eval:bg              # detached test:evals (diff-based)
-bun run eval:bg:all          # detached test:evals:all
-bun run eval:bg:gate         # detached gate-tier suite
-bun run eval:bg:periodic     # detached periodic-tier suite
+bun run eval:bg              # 分离运行 test:evals(基于 diff)
+bun run eval:bg:all          # 分离运行 test:evals:all
+bun run eval:bg:gate         # 分离运行 gate 层套件
+bun run eval:bg:periodic     # 分离运行 periodic 层套件
 ```
 
-Each prints its log path. The gate and periodic variants run their tier through
-the sharded paid runner (`scripts/test-paid-shards.ts`, also available directly
-as `bun run test:gate:sharded` / `bun run test:periodic:sharded`): one Bun
-process per test file, an external wall-clock timeout that kills the shard's
-whole process group (stray `claude`/`codex` grandchildren included), a per-shard
-eval dir (`GSTACK_EVAL_DIR=<evalDir>/shards/<slug>/`), and an aggregate that
-distinguishes failed vs timed-out vs never-started shards. The runner also
-selects by diff: shards untouched by your branch are reported as
-skipped-by-diff, with a selection banner naming the reason (`EVALS_ALL=1`
-forces everything). `EVALS_JOBS` sets how many shard processes run at once
-(default 8); `EVALS_CONCURRENCY` is bun's concurrency WITHIN a shard
-(default 2) — they are deliberately separate knobs. `eval:list`,
-`eval:compare`, `eval:summary`, and `eval:flake-rank` are shard-aware. Humans running
-`bun run test:evals` foreground in their own terminal don't need this — Ctrl-C
-is intended there.
+工件永不清理——它们累积在 `~/.gstack-dev/` 供事后调试与趋势分析。
 
-**Eval comparison commentary:** `eval:compare` generates natural-language Takeaway sections interpreting what changed between runs — flagging regressions, noting improvements, calling out efficiency gains (fewer turns, faster, cheaper), and producing an overall summary. This is driven by `generateCommentary()` in `eval-store.ts`.
+### 第 3 层:LLM-as-judge(每次约 $0.15)
 
-Artifacts are never cleaned up — they accumulate in `~/.gstack-dev/` for post-mortem debugging and trend analysis.
+用 Claude Sonnet 从三个维度给生成的 SKILL.md 打分。可用 `GSTACK_EVAL_MODEL_JUDGE` 覆盖评审模型:
 
-### Tier 3: LLM-as-judge (~$0.15/run)
+- **清晰度** —— AI agent 能否无歧义地理解指令?
+- **完整性** —— 所有命令、参数、用法是否都有文档?
+- **可执行性** —— agent 仅凭文档信息能否完成任务?
 
-Uses Claude Sonnet to score generated SKILL.md docs on three dimensions.
-Override the judge model per run with `GSTACK_EVAL_MODEL_JUDGE`:
+每维 1-5 分,阈值:每维必须 **≥ 4**。另有回归测试把生成文档与 `origin/main` 的人工基线对比,生成版得分不得更低。
 
-- **Clarity** — Can an AI agent understand the instructions without ambiguity?
-- **Completeness** — Are all commands, flags, and usage patterns documented?
-- **Actionability** — Can the agent execute tasks using only the information in the doc?
-
-Each dimension is scored 1-5. Threshold: every dimension must score **≥ 4**. There's also a regression test that compares generated docs against the hand-maintained baseline from `origin/main` — generated must score equal or higher.
-
-```bash
-# Needs ANTHROPIC_API_KEY in .env — included in bun run test:evals
-```
-
-- Uses `claude-sonnet-4-6` for scoring stability
-- Tests live in `test/skill-llm-eval.test.ts`
-- Calls the Anthropic API directly (not `claude -p`), so it works from anywhere including inside Claude Code
+- 评分模型为 `claude-sonnet-4-6`(求稳定)
+- 测试位于 `test/skill-llm-eval.test.ts`
+- 直接调用 Anthropic API(非 `claude -p`),因此任何地方都能跑,包括 Claude Code 内部
 
 ### CI
 
-A GitHub Action (`.github/workflows/skill-docs.yml`) runs `bun run gen:skill-docs --dry-run` on every push and PR. If the generated SKILL.md files differ from what's committed, CI fails. This catches stale docs before they merge.
+GitHub Action(`.github/workflows/skill-docs.yml`)在每次 push 和 PR 上运行 `bun run gen:skill-docs --dry-run`。若生成的 SKILL.md 与仓库中提交的不一致,CI 失败,把过期文档挡在合并之前。
 
-Supply-chain gates run alongside it:
+供应链门禁并行运行:质量门禁(凭据扫描、关键依赖通告、ShellCheck)、依赖审查、OSV 每周漏洞扫描、Dependabot 分组升级。供应链工作流把第三方 action 固定到 commit SHA。PR 模板要求提供证据(跑过的测试、评估输出),而不是口头承诺。
 
-- **Quality gate** (`.github/workflows/quality-gate.yml`, every PR and push) — scans the diff's added lines for credentials using gstack's own redact engine (`.github/scripts/gate-secret-scan.mjs`). HIGH findings fail the job; MEDIUM findings surface as an advisory count. Fails closed if the scan can't produce a report. Also gates critical dependency advisories and runs ShellCheck on the setup/build boundaries.
-- **Dependency review** (`.github/workflows/dependency-review.yml`) — reviews dependency changes on PRs that touch lockfiles or workflow files.
-- **OSV scanner** (`.github/workflows/osv-scanner.yml`) — weekly vulnerability scan against the OSV database. Config lives in `.osv-scanner.toml` and is loaded via an explicit `--config` flag (OSV does not auto-discover that filename); every ignore entry needs a reason and an `ignoreUntil` expiry, enforced by `test/osv-config-wiring.test.ts`.
-- **Dependabot** (`.github/dependabot.yml`) — grouped dependency update PRs.
+测试直接针对 browse 二进制运行,不依赖开发模式。需要 Aside 本体的测试只在打开 Aside 应用的 Mac 上运行,其余环境自动跳过。
 
-The supply-chain workflows pin their third-party actions to commit SHAs. The PR template (`.github/PULL_REQUEST_TEMPLATE.md`) asks for evidence — tests run, eval output — not promises.
+## 编辑 SKILL.md 文件
 
-Tests run against the browse binary directly — they don't require dev mode. Anything that needs Aside itself (`test/skill-e2e-aside.test.ts`, the Aside qa/design cases, the live render in `test/aside-render.test.ts`) runs only on a Mac with the Aside app open and self-skips elsewhere; make-pdf's render gates and the `/diagram` E2E run on whichever engine resolves, so CI runs them on the browse binary it builds with `bun run build:gates`.
-
-## Editing SKILL.md files
-
-SKILL.md files are **generated** from `.tmpl` templates. Don't edit the `.md` directly — your changes will be overwritten on the next build.
+SKILL.md 是由 `.tmpl` 模板**生成**的。不要直接改 `.md`——下次构建会覆盖你的改动。
 
 ```bash
-# 1. Edit the template
-vim SKILL.md.tmpl              # or browse/SKILL.md.tmpl
+# 1. 编辑模板
+vim SKILL.md.tmpl              # 或 browse/SKILL.md.tmpl
 
-# 2. Regenerate for all hosts
+# 2. 为所有 host 重新生成
 bun run gen:skill-docs --host all
 
-# 3. Check health (reports all hosts)
+# 3. 健康检查(报告所有 host)
 bun run skill:check
 
-# Or use watch mode — auto-regenerates on save
+# 或使用监听模式——保存即自动重新生成
 bun run dev:skill
 ```
 
-For template authoring best practices (natural language over bash-isms, dynamic branch detection, `{{BASE_BRANCH_DETECT}}` usage), see CLAUDE.md's "Writing SKILL templates" section.
+需要渲染 HTML/PDF 的 skill 一律通过 `lib/aside-render.ts`(`bin/gstack-render.ts` CLI),不要在 skill 里内置 puppeteer/Chromium。新增 browse 命令改 `browse/src/commands.ts`;新增快照参数改 `browse/src/snapshot.ts` 的 `SNAPSHOT_FLAGS`;然后重新构建。
 
-Browser steps in skills are `aside repl` scripts that follow the cookbook in `scripts/resolvers/aside.ts`, each paired with its `$B` equivalent for the fallback engine; run the Aside shape against the Aside CLI before committing. To add a browse command, add it to `browse/src/commands.ts`. To add a snapshot flag, add it to `SNAPSHOT_FLAGS` in `browse/src/snapshot.ts`. Then rebuild.
+## 多 host 开发
 
-**Render through `lib/aside-render.ts`; don't bundle puppeteer/Chromium in a
-skill.** A skill that needs to rasterize or print its own HTML/JSON (diagrams,
-cards, og-images, PDFs) calls `bin/gstack-render.ts` from its template
-(`--screenshot`, `--pdf`, `--eval JS --out FILE`) or imports `render` from
-`lib/aside-render.ts` in TypeScript (`renderWithAside` / `renderWithBrowse` are
-the engine-specific halves; `render` picks between them and retries once on the
-browse engine if Aside's CLI cannot start or loses its CDP bridge mid-run). The
-wrapper prints through Aside when it is open and through the `browse` daemon
-when it is not (`newtab --json`, `goto` the loopback URL, `js` readiness
-polling, `pdf --from-file`, `viewport` + `screenshot`, `js --out`, `closetab`)
-— the one shared Chromium per box, same flags and `OK <path>` lines,
-`ENGINE=aside|browse` saying which one actually rendered, `EVAL` /
-`PAGE_ERRORS` lines fenced as untrusted web content. The loopback server
-serves one per-render secret URL and never follows a symlink out of its
-directory. Sized screenshots are 1x on the fallback (2x on Aside); JPEG
-quality and `pageRanges`/`scale` are Aside-only; `--landscape` swaps paper
-dimensions. Never `npm i puppeteer`, never download a second Chromium that
-drifts out of version sync, never point the renderer at a website. If the
-wrapper lacks an option you need, add it to `lib/aside-render.ts` (pin it in
-`test/aside-render.test.ts`, and in `test/gstack-render-cli.test.ts` when it
-is a CLI flag) so every caller gets it on both paths. Exported test seams:
-`pickEngine(fresh, deps)` (inject the probe and the binary resolver),
-`serveDir(root, nonce)`, `SAFE_TMP_DIR`, and `PAGE_NUMBER_FOOTER` (the one
-page-number footer make-pdf, `gstack-render`, and the browse `pdf` command share).
+gstack 从同一套 `.tmpl` 模板为 10 个 host 生成 SKILL.md。每个 host 是 `hosts/*.ts` 里的一个类型化配置,生成器读取配置产出各 host 适配的输出(不同 frontmatter、路径、工具名)。
 
-## Jargon list (V1 writing style)
-
-gstack's Writing Style section (injected into every tier-≥2 skill's preamble)
-glosses technical terms on first use per skill invocation. The list of terms
-that qualify for glossing lives at `scripts/jargon-list.json` — ~50 curated
-high-frequency terms (idempotent, race condition, N+1, backpressure, etc.).
-Terms not on the list are assumed plain-English enough.
-
-**Adding or removing a term:** open a PR editing `scripts/jargon-list.json`.
-Run `bun run gen:skill-docs` after the edit — terms are baked into every
-generated SKILL.md at gen time, so changes take effect only after regeneration.
-No runtime loading; no user-side override. The repo list is the source of truth.
-
-Good candidates for addition: high-frequency terms that non-technical users
-encounter in review output without context (common database/concurrency
-terminology, security jargon, frontend framework concepts). Don't add terms
-that only appear in one or two niche skills — the cost-to-value trade isn't
-worth the review overhead.
-
-## Multi-host development
-
-gstack generates SKILL.md files for 10 hosts from one set of `.tmpl` templates.
-Each host is a typed config in `hosts/*.ts`. The generator reads these configs
-to produce host-appropriate output (different frontmatter, paths, tool names).
-
-**Supported hosts:** Claude (primary), Codex, Factory, Kiro, OpenCode, Slate, Cursor, OpenClaw, Hermes, GBrain.
-
-### Generating for all hosts
+**支持的 host:** Claude(主)、Codex、Factory、Kiro、OpenCode、Slate、Cursor、OpenClaw、Hermes、GBrain。
 
 ```bash
-# Generate for a specific host
-bun run gen:skill-docs                    # Claude (default)
+bun run gen:skill-docs                    # Claude(默认)
 bun run gen:skill-docs --host codex       # Codex
-bun run gen:skill-docs --host opencode    # OpenCode
-bun run gen:skill-docs --host all         # All 10 hosts
-
-# Or use build, which does all hosts + compiles binaries
-bun run build
+bun run gen:skill-docs --host all         # 全部 10 个 host
+bun run build                             # 所有 host + 编译二进制
 ```
 
-### What changes between hosts
+各 host 之间变化的部分:输出目录、frontmatter 完整度、路径写法(`~/.claude/skills/gstack` vs `$GSTACK_ROOT`)、工具名改写、hook skill 表达方式、被抑制的章节、模型覆盖(`claude` vs `gpt`)。完整 `HostConfig` 接口见 `scripts/host-config.ts`。
 
-Each host config (`hosts/*.ts`) controls:
+### 新增 host
 
-| Aspect | Example (Claude vs Codex) |
-|--------|---------------------------|
-| Output directory | `{skill}/SKILL.md` vs `.agents/skills/gstack-{skill}/SKILL.md` |
-| Frontmatter | Full (name, description, hooks, version) vs minimal (name + description) |
-| Paths | `~/.claude/skills/gstack` vs `$GSTACK_ROOT` |
-| Tool names | "use the Bash tool" vs same (Factory rewrites to "run this command") |
-| Hook skills | `hooks:` frontmatter vs inline safety advisory prose |
-| Suppressed sections | None vs Codex self-invocation sections stripped |
-| Model overlay | `claude` vs `gpt` (per-host `defaultModel`; `--model` or, at setup time, the Codex `config.toml` model overrides) |
+完整指南见 [docs/ADDING_A_HOST.md](docs/ADDING_A_HOST.md)。简版:
 
-See `scripts/host-config.ts` for the full `HostConfig` interface.
+1. 创建 `hosts/myhost.ts`(从 `hosts/opencode.ts` 复制)
+2. 加入 `hosts/index.ts`
+3. 把 `.myhost/` 加入 `.gitignore`
+4. 运行 `bun run gen:skill-docs --host myhost`
+5. 运行 `bun run test`(参数化测试自动覆盖)
 
-### Testing host output
+生成器、setup、工具链代码零改动。
 
-```bash
-# Run all static tests (includes parameterized smoke tests for all hosts)
-bun run test
+### 新增 skill
 
-# Check freshness for all hosts
-bun run gen:skill-docs --host all --dry-run
+新增 skill 模板后所有 host 自动获得:
 
-# Health dashboard covers all hosts
-bun run skill:check
-```
+1. 创建 `{skill}/SKILL.md.tmpl`
+2. 运行 `bun run gen:skill-docs --host all`
+3. 动态模板发现自动纳入,无需维护静态清单
+4. 做预算登记:运行 `bun test/helpers/capture-context-budget.ts` 并提交刷新后的 `test/fixtures/context-budget.json`——上下文预算棘轮会拒绝没有上限的新 skill
+5. 提交 `{skill}/SKILL.md`;外部 host 输出在 setup 时生成并 gitignore
 
-### Adding a new host
+## Conductor 工作区
 
-See [docs/ADDING_A_HOST.md](docs/ADDING_A_HOST.md) for the full guide. Short version:
+如果你用 [Conductor](https://conductor.build) 并行跑多个 Claude Code 会话,`conductor.json` 会自动接好工作区生命周期:`setup` 钩子运行 `bin/dev-setup`(从主 worktree 复制 `.env`、装依赖、软链 skill、非交互运行 `./setup`);`archive` 钩子运行 `bin/dev-teardown`(移除软链与渲染目录并清理)。Conductor 创建新工作区时 `bin/dev-setup` 自动运行,无需手动操作。
 
-1. Create `hosts/myhost.ts` (copy from `hosts/opencode.ts`)
-2. Add to `hosts/index.ts`
-3. Add `.myhost/` to `.gitignore`
-4. Run `bun run gen:skill-docs --host myhost`
-5. Run `bun run test` (parameterized tests auto-cover it)
+**首次配置:** 把 `ANTHROPIC_API_KEY` 放进主仓库的 `.env`(参考 `.env.example`),所有 Conductor 工作区自动继承。
 
-Zero generator, setup, or tooling code changes needed.
+**`GSTACK_*` 环境变量前缀(Conductor 注入)。** Conductor 会从工作区进程环境中显式剥离 `ANTHROPIC_API_KEY` 和 `OPENAI_API_KEY`。要在 Conductor 工作区里跑付费评估、`/sync-gbrain` 向量或 `claude-agent-sdk` 调用,请在 Conductor 的工作区环境配置里设置 `GSTACK_ANTHROPIC_API_KEY` 和 `GSTACK_OPENAI_API_KEY`;gstack 侧的 `lib/conductor-env-shim.ts` 会在正式名为空时把 `GSTACK_FOO_API_KEY` 提升为 `FOO_API_KEY`。新增会调付费 API 的 TS 入口时,在文件顶部加 `import "../lib/conductor-env-shim";`。
 
-### Adding a new skill
+## 注意事项
 
-When you add a new skill template, all hosts get it automatically:
-1. Create `{skill}/SKILL.md.tmpl`
-2. Run `bun run gen:skill-docs --host all`
-3. The dynamic template discovery picks it up, no static list to update
-4. Budget it: run `bun test/helpers/capture-context-budget.ts` and commit the refreshed `test/fixtures/context-budget.json` — the context-budget ratchet fails any skill without a ceiling
-5. Commit `{skill}/SKILL.md`, external host output is generated at setup time and gitignored
+- **SKILL.md 是生成物。** 改 `.tmpl` 模板,别改 `.md`;改完跑 `bun run gen:skill-docs` 重新生成。
+- **TODOS.md 是统一待办池。** 按 skill/组件组织,P0-P4 优先级。`/ship` 自动识别已完成项,所有规划/评审/复盘 skill 都会读它获取上下文。
+- **browse、make-pdf、design 和 `lib/` 源码改动需要重新构建。** 碰了 `browse/src/*.ts`、`make-pdf/src/*.ts`、`design/src/*.ts` 或 `lib/` 下任何文件,跑 `bun run build`。`./setup` 自己也会做同样判断。
+- **开发模式会遮蔽全局安装。** 项目本地 skill 优先于 `~/.claude/skills/gstack`;`bin/dev-teardown` 恢复全局版。
+- **Conductor 工作区相互独立。** 每个工作区是独立 git worktree,`bin/dev-setup` 经由 `conductor.json` 自动运行。
+- **`.env` 跨 worktree 传播。** 主仓库设一次,所有 Conductor 工作区共享。
+- **`.claude/skills/` 已被 gitignore。** 软链不会被提交。
+- **不要在 `setup` 里裸写 `ln -snf`。** 所有链接点必须经由 `_link_or_copy SRC DST` 辅助函数:Unix 上保留 `ln -snf`,Windows 无开发者模式时切换为 `cp -R`/`cp -f`(裸 `ln -snf` 会产生 `git pull` 后不刷新的冻结文件副本)。静态不变量测试强制执行。
+- **同步派发子 agent 必须显式声明 `run_in_background: false`。** 模板里派发子 agent 并消费其输出的步骤都要带该参数,使用 `{{FOREGROUND_DISPATCH_NOTE}}` 占位符,并在同一提交里把生成的载体文件登记进 `GENERATED_WITH_GUIDANCE`。
+- **绝不删除或覆盖 `setup` 无法证明属于 gstack 的 skill 条目。** 所有破坏性操作都经过所有权辅助函数校验;不确定的条目先移到 `~/.gstack/backups/skills/<ts>/`。
+- **`./setup` 绝不因 Chromium 失败。** Playwright 引导是尽力而为且有界的:所有失败都变成原因码印进最终汇总,skill 注册照常执行。`GSTACK_PLAYWRIGHT_INSTALL_TIMEOUT=<秒>`(默认 600)限制下载;`GSTACK_SKIP_PLAYWRIGHT=1` 跳过;`GSTACK_SKIP_ASIDE=1` 让浏览器汇总把 Aside 视为不存在。
 
-## Conductor workspaces
+## 在真实项目中测试你的改动
 
-If you're using [Conductor](https://conductor.build) to run multiple Claude Code sessions in parallel, `conductor.json` wires up workspace lifecycle automatically:
+**这是推荐的 gstack 开发方式。** 把你的 gstack checkout 软链到你实际使用的项目里,边干真活边让改动生效。
 
-| Hook | Script | What it does |
-|------|--------|-------------|
-| `setup` | `bin/dev-setup` | Copies `.env` from main worktree, installs deps, symlinks skills, runs `./setup` non-interactively, and (if gbrain is installed) renders brain-aware blocks into `.claude/gstack-rendered/` without dirtying tracked source |
-| `archive` | `bin/dev-teardown` | Removes skill symlinks, the `.claude/gstack-rendered/` render, and cleans up `.claude/` directory |
-
-When Conductor creates a new workspace, `bin/dev-setup` runs automatically. It detects the main worktree (via `git worktree list`), copies your `.env` so API keys carry over, and sets up dev mode — no manual steps needed.
-
-`bin/dev-setup` runs `./setup` fully non-interactively (it passes `--plan-tune-hooks=prompt` and closes stdin), so a forwarded Conductor TTY can never hang on a hidden setup prompt. It also never installs the plan-tune Claude Code hooks, which means a throwaway workspace can't rewrite your global `~/.claude/settings.json` to point at an ephemeral worktree path. To install the plan-tune hooks deliberately, run `./setup --plan-tune-hooks` outside dev-setup (or `gstack-config set plan_tune_hooks yes`). The explicit flag counts as an explicit decision: setup's Conductor auto-opt-in for AskUserQuestion hooks fires only on the true silent fall-through (no flag, no `GSTACK_PLAN_TUNE_HOOKS` env var, no `plan_tune_hooks` key literally present in config, checked via `gstack-config has`), so it can never override dev-setup into installing hooks. One stated repair exception: setup's heal-first pass (`gstack-settings-hook prune-stale --repoint`) may prune dead gstack hook entries and re-point existing ones at the stable `~/.claude/skills/gstack` install. That is strictly convergent repair, never a new registration, and registration itself is canonical-only, so an ephemeral tree path can never be baked into settings.json.
-
-**First-time setup:** Put your `ANTHROPIC_API_KEY` in `.env` in the main repo (see `.env.example`). Every Conductor workspace inherits it automatically.
-
-**`GSTACK_*` env prefix (Conductor-injected keys).** Conductor explicitly strips `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from every workspace's process env. The `.env` copy path doesn't restore them either — the strip happens after env inheritance. Users who want paid evals, `/sync-gbrain` embeddings, or `claude-agent-sdk` calls to work in a Conductor workspace must set `GSTACK_ANTHROPIC_API_KEY` and `GSTACK_OPENAI_API_KEY` in Conductor's workspace env config; Conductor passes those through untouched. On the gstack side, TS entry points import `lib/conductor-env-shim.ts` as a side effect, which promotes `GSTACK_FOO_API_KEY` to `FOO_API_KEY` when the canonical name is empty. If you add a new TS entry point that hits a paid API, add `import "../lib/conductor-env-shim";` to the top of the file. Today the shim is imported from `bin/gstack-gbrain-sync.ts`, `bin/gstack-model-benchmark`, `scripts/preflight-agent-sdk.ts`, and `test/helpers/e2e-helpers.ts`.
-
-## Things to know
-
-- **SKILL.md files are generated.** Edit the `.tmpl` template, not the `.md`. Run `bun run gen:skill-docs` to regenerate.
-- **TODOS.md is the unified backlog.** Organized by skill/component with P0-P4 priorities. `/ship` auto-detects completed items. All planning/review/retro skills read it for context.
-- **Browse, make-pdf, design, and `lib/` source changes need a rebuild.** If you touch `browse/src/*.ts`, `make-pdf/src/*.ts`, `design/src/*.ts`, or anything under `lib/` (the canonical `claude-bin.ts`, `error-handling.ts`, and `aside-render.ts` the binaries embed; `browse/src` re-exports them), run `bun run build`. `./setup` makes the same call on its own: it rebuilds when any of the three binaries is missing or when those sources, `package.json`, or `bun.lock` are newer than the browse binary (`test/setup-needs-build.test.ts` pins the decision).
-- **Dev mode shadows your global install.** Project-local skills take priority over `~/.claude/skills/gstack`. `bin/dev-teardown` restores the global one.
-- **Conductor workspaces are independent.** Each workspace is its own git worktree. `bin/dev-setup` runs automatically via `conductor.json`.
-- **`.env` propagates across worktrees.** Set it once in the main repo, all Conductor workspaces get it.
-- **`.claude/skills/` is gitignored.** The symlinks never get committed.
-- **Never write raw `ln -snf` in `setup`.** Every link site in `setup` MUST route through the `_link_or_copy SRC DST` helper near the `IS_WINDOWS` detection. The helper preserves `ln -snf` on Unix and switches to `cp -R` / `cp -f` on Windows without Developer Mode, where plain `ln -snf` produces frozen file copies that don't refresh on `git pull`. `test/setup-windows-fallback.test.ts` enforces this with a static invariant — a single raw `ln` call outside the helper body fails CI.
-- **Synchronous subagent dispatches must state the flag.** Claude Code runs Agent-tool subagents in the background by default (since v2.1.198), so any template step that dispatches a subagent and consumes its output must carry `run_in_background: false`. Use the `{{FOREGROUND_DISPATCH_NOTE}}` placeholder (`scripts/resolvers/constants.ts`) instead of hand-writing the guidance, and add the generated carrier file to `GENERATED_WITH_GUIDANCE` in `test/run-in-background-guidance.test.ts` in the same commit — its structural scanner fails CI on any generated dispatch imperative that lacks the flag.
-- **Never delete or link over a skill entry `setup` cannot prove is gstack's.** Every destructive site in `setup` (the linker, the alias installer, both prefix-flip cleanups) and in `bin/gstack-relink` goes through the ownership helpers (`_claude_entry_is_ours` / `_claude_entry_owned_strongly` in `setup`, `_entry_is_ours` / `_entry_owned_strongly` in relink). The retired-skill prune (`_prune_stale_generated`) applies the same strong/weak split through its own gate: a real host directory is a candidate only when its SKILL.md carries the generated banner (`_owned_for_windows_refresh`), a host symlink is removed only when it resolves into gstack (`_gstack_target_is_ours`), a bannered real directory is cleaned through `_cleanup_weak_dir`, and a symlink inside the render tree is never followed. A symlink into gstack or the `.gstack-owned` marker proves the whole directory; a byte-identical or generated-banner SKILL.md proves only that file, and a differing one is moved to `~/.gstack/backups/skills/<ts>/` first. `test/setup-link-ownership.test.ts`, `test/setup-cleanup-orphans.test.ts`, `test/setup-prune-stale-generated.test.ts`, and `test/relink.test.ts` pin it. The rule is duplicated in the two scripts until the shared helper filed in TODOS.md lands: change both.
-- **`./setup` never fails on Chromium.** The Playwright bootstrap (section `# 2` of `setup`) is best-effort and bounded: every failure becomes a reason code (`skipped`, `chromium-install`, `chromium-install-timeout`, `chromium-install-locked`, `windows-no-node`, `windows-node-modules`, `post-install-launch`) printed in the final summary alongside the browser-dependent skills, and skill registration always runs. `GSTACK_PLAYWRIGHT_INSTALL_TIMEOUT=<seconds>` (default 600) bounds the download; `GSTACK_SKIP_PLAYWRIGHT=1` skips it, the right knob for a no-browser box or a setup-only test loop. `GSTACK_SKIP_ASIDE=1` makes the browser summary (like the skills' probe and the renderer) treat Aside as absent, so the summary never promises a fallback the bootstrap did not deliver (`test/setup-browser-hint.test.ts`). Anything you add after the bootstrap must stay independent of the browser. `test/setup-playwright-best-effort.test.ts` pins the block.
-
-## Testing your changes in a real project
-
-**This is the recommended way to develop gstack.** Symlink your gstack checkout
-into the project where you actually use it, so your changes are live while you
-do real work.
-
-### Step 1: Symlink your checkout
+### 第 1 步:软链你的 checkout
 
 ```bash
-# In your core project (not the gstack repo)
+# 在你的核心项目里(不是 gstack 仓库)
 ln -sfn /path/to/your/gstack-checkout .claude/skills/gstack
 ```
 
-### Step 2: Run setup to create per-skill symlinks
+### 第 2 步:运行 setup 创建逐 skill 软链
 
-The `gstack` symlink alone isn't enough. Claude Code discovers skills through
-individual top-level directories (`qa/SKILL.md`, `ship/SKILL.md`, etc.), not through
-the `gstack/` directory itself. Run `./setup` to create them:
+只有 `gstack` 一个软链还不够。Claude Code 是通过顶层目录(`qa/SKILL.md`、`ship/SKILL.md` 等)发现 skill 的。运行 `./setup` 创建它们:
 
 ```bash
 cd .claude/skills/gstack && bun install && bun run build && ./setup
 ```
 
-Setup will ask whether you want short names (`/qa`) or namespaced (`/gstack-qa`).
-Your choice is saved to `~/.gstack/config.yaml` and remembered for future runs.
-To skip the prompt, pass `--no-prefix` (short names) or `--prefix` (namespaced).
+setup 会问你用短名(`/qa`)还是带命名空间(`/gstack-qa`),选择保存在 `~/.gstack/config.yaml`。跳过询问可传 `--no-prefix`(短名)或 `--prefix`(命名空间)。
 
-### Step 3: Develop
+### 第 3 步:开发
 
-Edit a template, run `bun run gen:skill-docs`, and the next `/review` or `/qa`
-call picks it up immediately. No restart needed.
+编辑模板,跑 `bun run gen:skill-docs`,下一次 `/review` 或 `/qa` 调用立即生效,无需重启。
 
-### Going back to the stable global install
+### 回到稳定的全局安装
 
-Remove the project-local symlink. Claude Code falls back to `~/.claude/skills/gstack/`:
+删掉项目本地软链即可,Claude Code 自动回落到 `~/.claude/skills/gstack/`:
 
 ```bash
 rm .claude/skills/gstack
 ```
 
-The per-skill directories (`qa/`, `ship/`, etc.) contain SKILL.md symlinks that point
-to `gstack/...`, so they'll resolve to the global install automatically.
-
-### Switching prefix mode
-
-If you installed gstack with one prefix setting and want to switch:
+### 切换前缀模式
 
 ```bash
-cd .claude/skills/gstack && ./setup --no-prefix   # switch to /qa, /ship
-cd .claude/skills/gstack && ./setup --prefix       # switch to /gstack-qa, /gstack-ship
+cd .claude/skills/gstack && ./setup --no-prefix   # 切到 /qa、/ship
+cd .claude/skills/gstack && ./setup --prefix      # 切到 /gstack-qa、/gstack-ship
 ```
 
-Setup cleans up the old symlinks automatically. No manual cleanup needed. Only
-entries gstack created are removed: a skill of your own that shares a name (a
-hand-written `qa/`, say) is left in place and named in setup's final summary.
+setup 自动清理旧软链,只需注意:只会移除 gstack 自己创建的条目,你自建的同名 skill(比如手写的 `qa/`)会原样保留并在汇总中说明。
 
-### Alternative: point your global install at a branch
-
-If you don't want per-project symlinks, you can switch the global install:
+### 替代方案:把全局安装指向某个分支
 
 ```bash
 cd ~/.claude/skills/gstack
@@ -554,81 +302,61 @@ git checkout origin/<branch>
 bun install && bun run build && ./setup
 ```
 
-This affects all projects. To revert: `git checkout main && git pull && bun run build && ./setup`.
+这会影响所有项目。回退:`git checkout main && git pull && bun run build && ./setup`。
 
-## Community PR triage (wave process)
+## 社区 PR 分诊(波次流程)
 
-When community PRs accumulate, batch them into themed waves:
+社区 PR 堆积时,按主题分批处理:
 
-1. **Categorize** — group by theme (security, features, infra, docs)
-2. **Deduplicate** — if two PRs fix the same thing, pick the one that
-   changes fewer lines. Close the other with a note pointing to the winner.
-3. **Collector branch** — create `pr-wave-N`, merge clean PRs, resolve
-   conflicts for dirty ones, verify with `bun run test && bun run build`
-4. **Close with context** — every closed PR gets a comment explaining
-   why and what (if anything) supersedes it. Contributors did real work;
-   respect that with clear communication.
-5. **Ship as one PR** — single PR to main with all attributions preserved
-   in merge commits. Include a summary table of what merged and what closed.
+1. **归类** —— 按主题分组(安全、功能、基础设施、文档)
+2. **去重** —— 两个 PR 修同一问题时,选改动行数更少的那个,关闭另一个并注明指向
+3. **收集分支** —— 建 `pr-wave-N`,合并干净的 PR,给脏 PR 解冲突,用 `bun run test && bun run build` 验证
+4. **带上下文地关闭** —— 每个被关闭的 PR 都留评论说明原因及被什么取代。贡献者付出了真实劳动,用清晰的沟通表达尊重
+5. **合并为一个 PR** —— 单个 PR 进 main,合并提交保留全部署名,附合并/关闭汇总表
 
-See [PR #205](../../pull/205) (v0.8.3) for the first wave as an example.
+## 升级迁移
 
-## Upgrade migrations
+当一次发布以 `./setup` 无法自愈的方式改变磁盘状态(目录结构、配置格式、遗留文件)时,添加迁移脚本让老用户平滑升级。
 
-When a release changes on-disk state (directory structure, config format, stale
-files) in ways that `./setup` alone can't fix, add a migration script so existing
-users get a clean upgrade.
+### 何时需要迁移
 
-### When to add a migration
+- skill 目录的创建方式变了(软链 vs 实体目录)
+- `~/.gstack/config.yaml` 的配置键改名或移动
+- 需要删除上一版本的孤儿文件
+- `~/.gstack/` 状态文件格式变更
 
-- Changed how skill directories are created (symlinks vs real dirs)
-- Renamed or moved config keys in `~/.gstack/config.yaml`
-- Need to delete orphaned files from a previous version
-- Changed the format of `~/.gstack/` state files
+不要为以下情况加迁移:新功能(用户自动获得)、新 skill(setup 会发现)、纯代码改动(不涉及磁盘状态)。
 
-Don't add a migration for: new features (users get them automatically), new
-skills (setup discovers them), or code-only changes (no on-disk state).
+### 如何添加
 
-### How to add one
-
-1. Create `gstack-upgrade/migrations/v{VERSION}.sh` where `{VERSION}` matches
-   the VERSION file for the release that needs the fix.
-2. Make it executable: `chmod +x gstack-upgrade/migrations/v{VERSION}.sh`
-3. The script must be **idempotent** (safe to run multiple times) and
-   **non-fatal** (failures are logged but don't block the upgrade).
-4. Include a comment block at the top explaining what changed, why the
-   migration is needed, and which users are affected.
-
-Example:
+1. 创建 `gstack-upgrade/migrations/v{VERSION}.sh`,`{VERSION}` 对应需要修复的发布的 VERSION 文件
+2. 赋予执行权限:`chmod +x gstack-upgrade/migrations/v{VERSION}.sh`
+3. 脚本必须**幂等**(可安全重复运行)且**非致命**(失败只记录日志,不阻塞升级)
+4. 顶部加注释块:改了什么、为什么需要迁移、影响哪些用户
 
 ```bash
 #!/usr/bin/env bash
-# Migration: v0.15.2.0 — Fix skill directory structure
-# Affected: users who installed with --no-prefix before v0.15.2.0
+# Migration: v0.15.2.0 — 修复 skill 目录结构
+# 影响范围:v0.15.2.0 之前用 --no-prefix 安装的用户
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 "$SCRIPT_DIR/bin/gstack-relink" 2>/dev/null || true
 ```
 
-### How it runs
+### 执行机制
 
-During `/gstack-upgrade`, after `./setup` completes (Step 4.75), the upgrade
-skill scans `gstack-upgrade/migrations/` and runs every `v*.sh` script whose
-version is newer than the user's old version. Scripts run in version order.
-Failures are logged but never block the upgrade.
+`/gstack-upgrade` 期间,`./setup` 完成后(步骤 4.75),升级 skill 扫描 `gstack-upgrade/migrations/`,运行所有版本号比用户旧版本新的 `v*.sh` 脚本,按版本顺序执行,失败只记录不阻塞。
 
-### Testing migrations
+### 测试迁移
 
-Migrations are tested as part of `bun run test` (tier 1, free). The test suite
-verifies that all migration scripts in `gstack-upgrade/migrations/` are
-executable and parse without syntax errors.
+迁移脚本作为 `bun run test`(第 1 层,免费)的一部分被测试:套件验证所有迁移脚本可执行且无语法错误。
 
-## Shipping your changes
+## 发布你的改动
 
-When you're happy with your skill edits:
+对 skill 改动满意后:
 
 ```bash
 /ship
 ```
 
-This runs tests, reviews the diff, triages Greptile comments (with 2-tier escalation), manages TODOS.md, bumps the version, and opens a PR. See `ship/SKILL.md` for the full workflow.
+它会跑测试、评审 diff、分诊 Greptile 评论(两级升级)、管理 TODOS.md、升版本号并发起 PR。完整工作流见 `ship/SKILL.md`。
