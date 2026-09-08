@@ -1,24 +1,26 @@
-# Tutorial: generate docs for a feature in 90 seconds
+> 🌐 本文档由 [garrytan/gstack](https://github.com/garrytan/gstack) 翻译,英文原版见原项目。
 
-You'll run `/document-generate` against a project you already have, watch it write tutorial / how-to / reference / explanation docs in the right places, and end with a coverage map you can drop into a PR. By the end, you'll know the four moves: scope, archaeology, partition, write.
+# 教程:90 秒为一个功能生成文档
 
-## What you'll need
+你将对一个现有项目运行 `/document-generate`,看它把 tutorial / how-to / reference / explanation 文档写到正确的位置,最后得到一张可直接贴进 PR 的覆盖图。读完后你会掌握四个动作:划定范围、考古、分派、落笔。
 
-- gstack installed (`git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup`)
-- Claude Code running in any project that has at least one piece of public surface (a CLI command, an exported function, a config option, a skill, an API endpoint)
-- About 90 seconds
+## 你需要准备
 
-You do not need a `docs/` directory in advance — the skill creates one if it's missing. You do not need to know Diataxis terminology — the skill labels the output for you.
+- 已安装 gstack(`git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup`)
+- Claude Code 运行在任意至少有一处公开面的项目里(一个 CLI 命令、一个导出函数、一个配置项、一个 skill、一个 API 端点)
+- 大约 90 秒
 
-## Step 1: Invoke the skill in any project
+不需要提前准备 `docs/` 目录——缺了 skill 会自建。不需要懂 Diataxis 术语——skill 会替你打标签。
 
-Open Claude Code in the project you want to document. Type:
+## 步骤 1:在任意项目调用 skill
+
+在要写文档的项目里打开 Claude Code,输入:
 
 ```
 /document-generate
 ```
 
-You'll see the skill ask one question about output target:
+skill 会问一个关于输出目标的问题:
 
 ```
 A) Write documentation inline in existing files (README, ARCHITECTURE, etc.)
@@ -28,29 +30,29 @@ C) Both — inline summaries in existing files + deep docs in standalone files
 RECOMMENDATION: Choose C because it maximizes both discoverability and depth.
 ```
 
-Pick C. You'll get a README pointer plus a full set of standalone docs.
+选 C。你会得到 README 指针 + 一整套独立文档。
 
-## Step 2: Watch the archaeology run
+## 步骤 2:观察考古阶段运行
 
-The skill goes silent for ~30 seconds while it reads the codebase. This is intentional — the Step 1 "Codebase Archaeology" phase is the most important step in the workflow. The skill is reading:
+skill 会安静约 30 秒读代码库。这是有意的——步骤 1 的"代码库考古"是整个工作流最重要的环节。它读的是:
 
-- The full repository structure
-- README, ARCHITECTURE, CONTRIBUTING, CLAUDE.md (the entry points)
-- The implementation files for whatever you're documenting (full file, not just signatures)
-- The tests (which reveal edge cases and intended behavior)
-- Inline comments tagged `// NOTE:`, `// DESIGN:`, `// WHY:`
+- 完整的仓库结构
+- README、ARCHITECTURE、CONTRIBUTING、CLAUDE.md(入口文档)
+- 你要写文档的对象的实现文件(读完整文件,不只看签名)
+- 测试(揭示边界情况与预期行为)
+- 标了 `// NOTE:`、`// DESIGN:`、`// WHY:` 的行内注释
 
-When it finishes, you'll see a line like:
+结束后你会看到一行类似:
 
 ```
 Researched 47 files, identified 12 public surface items, 8 concepts, and 4 design decisions.
 ```
 
-That number tells you the skill actually read the code rather than guessing from filenames.
+这个数字说明 skill 真读了代码,而不是靠文件名瞎猜。
 
-## Step 3: See the Diataxis partition plan
+## 步骤 3:查看 Diataxis 分派计划
 
-The skill prints a partition plan showing which quadrants it'll write for which entity:
+skill 打印一份分派计划,说明为哪些实体写哪些象限:
 
 ```
 Documentation plan:
@@ -60,25 +62,25 @@ Documentation plan:
   Bayesian scheduler    ❌        ❌       ✅ new      ✅ new
 ```
 
-Not every entity needs all four quadrants. CLI flags get reference + how-to. Internal modules get reference + explanation. User-facing features get all four. The skill picks based on entity type.
+并非每个实体都需要四个象限:CLI 参数要 reference + how-to,内部模块要 reference + explanation,面向用户的功能四象限全要。skill 按实体类型自行选择。
 
-If the plan has more than 5 documents, the skill asks you to confirm before proceeding. Otherwise it goes.
+计划超过 5 份文档时,skill 会先请你确认;否则直接开写。
 
-## Step 4: Read the first doc that lands
+## 步骤 4:阅读第一份落地的文档
 
-Reference docs land first because they fix the vocabulary. You'll see lines like:
+参考文档最先落地,因为它固定词汇。你会看到:
 
 ```
 GENERATED: docs/reference-widget-service.md
 ```
 
-Open that file. It has a strict structure: one-paragraph intro, complete API listing with types and defaults, 2-3 runnable examples, and a Related section linking to the how-to and tutorial that will land next.
+打开该文件。结构严格:一段式导语、带类型与默认值的完整 API 列表、2-3 个可运行示例,以及一个 Related 章节链接到接下来落地的 how-to 和教程。
 
-This is what reference docs look like in Diataxis: factual, exhaustive, no narrative. If you find yourself wanting to explain *why* an option exists, that belongs in the explanation doc the skill will write next.
+这就是 Diataxis 里参考文档该有的样子:事实性、穷尽性、无叙事。当你忍不住想解释某个选项**为什么**存在时,那份内容属于 skill 接下来要写的解释文档。
 
-## Step 5: See the explanation, how-to, and tutorial appear
+## 步骤 5:看解释、how-to 与教程依次出现
 
-In quick succession (each ~5-10 seconds), the skill writes the remaining quadrants:
+紧接着(每份约 5-10 秒),skill 写出其余象限:
 
 ```
 GENERATED: docs/explanation-widget-architecture.md
@@ -86,29 +88,29 @@ GENERATED: docs/howto-create-a-custom-widget.md
 GENERATED: docs/tutorial-build-your-first-widget.md
 ```
 
-Open each one. Notice they don't repeat each other:
+逐个打开。注意它们互不重复:
 
-- **Explanation** leads with the problem, then the approach, then trade-offs and alternatives considered
-- **How-to** has prerequisites, numbered steps with exact commands, a verification section, and a troubleshooting section
-- **Tutorial** gets you to a working result in under 3 steps, ends with "What you built"
+- **解释**以问题开篇,然后是方案,然后是权衡与被否决的替代项
+- **How-to** 有前置条件、带精确命令的编号步骤、验证章节、故障排查章节
+- **教程**在 3 步内让你拿到可用结果,以"What you built"收尾
 
-The skill enforces these structures. If a how-to was missing a verification section, the Step 8 Quality Self-Review caught it before commit.
+skill 强制这些结构。how-to 缺验证章节这类问题,提交前就被步骤 8 的质量自审抓住。
 
-## Step 6: Check cross-linking
+## 步骤 6:检查交叉链接
 
-Every doc links to the others. Reference doc Related section: links to how-to and tutorial. How-to Related section: links to reference. Tutorial "What you built" section: links to reference for deeper exploration.
+每份文档都互相链接:参考文档的 Related 链到 how-to 与教程;how-to 的 Related 链回参考;教程的"What you built"链到参考供深入探索。
 
-Run a grep to verify no broken links:
+跑个 grep 确认没有死链:
 
 ```bash
 grep -rE '\]\([^)]*\.md\)' docs/ | head -10
 ```
 
-Every linked file should exist. The skill's Step 7 "Cross-Document Linking & Discoverability" checks this before commit.
+每个被链接的文件都应存在。skill 的步骤 7"跨文档链接与可发现性"会在提交前检查这个。
 
-## Step 7: See the coverage summary in the PR body
+## 步骤 7:在 PR 正文看到覆盖汇总
 
-If you're on a feature branch with an open PR, the skill updates the PR body with a `## Documentation Generated` table:
+如果你在带开 PR 的功能分支上,skill 会把 `## Documentation Generated` 表格更新进 PR 正文:
 
 ```
 ## Documentation Generated
@@ -121,22 +123,22 @@ If you're on a feature branch with an open PR, the skill updates the PR body wit
 | docs/howto-create-a-custom-widget.md | How-to | Creating and registering custom widgets |
 ```
 
-A reviewer opening the PR sees the table and knows immediately what kind of coverage shipped.
+打开 PR 的评审者看到表格,立刻知道上线了哪种覆盖。
 
-## What you built
+## 你构建了什么
 
-You now have four documents that serve four different readers:
+你现在有四份服务四种读者的文档:
 
-- A newcomer to your project can read `tutorial-*.md` and get something working
-- An experienced user can read `howto-*.md` to accomplish a specific task
-- An API caller can read `reference-*.md` for exact signatures
-- A code reviewer can read `explanation-*.md` to understand the design
+- 项目新人读 `tutorial-*.md` 就能让东西跑起来
+- 老手读 `howto-*.md` 完成特定任务
+- API 调用方读 `reference-*.md` 查精确签名
+- 代码评审者读 `explanation-*.md` 理解设计
 
-Each one is short enough to maintain. Each one has a single job. The PR body shows which quadrants were covered. If you run `/document-release` later, the Diataxis coverage map will report this entity as fully covered (4/4 quadrants).
+每份都短到可以维护,每份只有一件事。PR 正文展示了覆盖了哪些象限。之后再跑 `/document-release`,Diataxis 覆盖图会把该实体报告为全覆盖(4/4 象限)。
 
-## What to do next
+## 接下来做什么
 
-- **If you have gaps** /document-release flagged but didn't fill: run `/document-generate` again, scoped to those entities specifically.
-- **If you want to understand why the four quadrants exist:** read [explanation-diataxis-in-gstack.md](./explanation-diataxis-in-gstack.md).
-- **If you want to document one specific shipped feature** (not the whole project): read [howto-document-a-shipped-feature.md](./howto-document-a-shipped-feature.md).
-- **Reference for the skill itself:** [`document-generate/SKILL.md`](../document-generate/SKILL.md).
+- **`/document-release` 点名了缺口但没填**:重跑 `/document-generate`,范围限定到那些实体。
+- **想理解四象限为什么存在**:读 [explanation-diataxis-in-gstack.md](./explanation-diataxis-in-gstack.md)。
+- **只想为某一个已上线功能补文档**(而非整个项目):读 [howto-document-a-shipped-feature.md](./howto-document-a-shipped-feature.md)。
+- **skill 本身的参考文档**:[`document-generate/SKILL.md`](../document-generate/SKILL.md)。
