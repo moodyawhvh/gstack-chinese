@@ -1,20 +1,22 @@
-# Why gstack uses Diataxis for documentation
+> 🌐 本文档由 [garrytan/gstack](https://github.com/garrytan/gstack) 翻译,英文原版见原项目。
 
-The two doc skills in gstack — `/document-release` and `/document-generate` — both speak Diataxis. New entities get scored across four quadrants. Coverage gaps surface in PR bodies tagged by quadrant. This doc explains why that vocabulary is load-bearing, and why a simpler "just write markdown" approach falls down at the scale gstack operates at.
+# gstack 为什么用 Diataxis 组织文档
 
-## The problem
+gstack 的两个文档 skill——`/document-release` 和 `/document-generate`——都说 Diataxis 这套语言。新实体按四个象限打分,覆盖缺口按象限标注并出现在 PR 正文里。本文解释为什么这套词汇是承重墙,以及为什么"直接写 Markdown 就完事了"的简单思路在 gstack 的规模上会失灵。
 
-Documentation rot is the easiest kind of rot to ignore. Code stops compiling and you notice immediately. A test fails and CI screams. Docs go stale silently — the README still parses, the install command still copy-pastes — and the only signal is a confused user weeks later filing an issue or quietly walking away.
+## 问题所在
 
-gstack has more than 45 skills. Every one is a SKILL.md plus a `.tmpl` template plus, ideally, a getting-started tutorial somewhere and an explanation of why it works the way it does. Multiply that by however many gstack users have similar surface-area in their own projects and the maintenance load is real.
+文档腐化是最容易被无视的腐化。代码编译不过,你马上发现;测试挂了,CI 尖叫;文档过期是无声的——README 还能解析,安装命令还能复制粘贴——唯一的信号是几周后某个困惑的用户来提 issue,或者悄无声息地走人。
 
-The naive failure mode is "every team writes docs in their own format." One project has a Wiki. Another has nested README files. A third has reference-only API docs and no tutorials. A fourth has tutorials that no longer compile. You can't write tooling that audits across all of those because there's no shared vocabulary for what good coverage means.
+gstack 有 45+ 个 skill。每个 skill 对应一个 SKILL.md 加一个 `.tmpl` 模板,理想情况下还要有一篇入门教程和一篇"为什么这样设计"的解释。再乘以所有在自己项目里有类似文档面的 gstack 用户,维护负载是实打实的。
 
-The second failure mode is more subtle: even when a team is disciplined, they tend to write the kind of doc that matches their current state of mind. Engineers in build mode write reference. Engineers in launch mode write tutorials. Engineers in maintenance mode write troubleshooting how-tos. No one wakes up and says "today I'll write the explanation doc for why we chose this architecture" — so explanation rot accumulates fastest.
+第一种朴素的失败模式是"每个团队用自己的格式写文档":一个项目用 Wiki,另一个用嵌套 README,第三个只有 API 参考没有教程,第四个的教程早已跑不通。你没法写工具跨这些格式做审计,因为"什么叫覆盖良好"根本没有共同词汇。
 
-## The approach
+第二种失败模式更隐蔽:即便团队有纪律,人也倾向于写符合自己当下心态的那类文档。构建期的工程师写参考,发布期的工程师写教程,维护期的工程师写故障排查 how-to。没有人早上醒来会说"今天我要写一篇解释我们为何选这个架构的文档"——所以 explanation 类文档腐化得最快。
 
-Diataxis (Daniele Procida, originally at Divio, now adopted across CPython, Django, NumPy, FastAPI, GitHub docs, and many others) splits documentation into four quadrants based on **reader intent**:
+## 方案
+
+Diataxis(Daniele Procida 提出,源于 Divio,现已被 CPython、Django、NumPy、FastAPI、GitHub 文档等广泛采用)按**读者意图**把文档分为四个象限:
 
 ```
                     THEORETICAL                        PRACTICAL
@@ -40,40 +42,40 @@ Diataxis (Daniele Procida, originally at Divio, now adopted across CPython, Djan
                    +-----------------------------+----------------------------+
 ```
 
-A reader in tutorial mode is learning by doing. They want a guided path with guaranteed success. A reader in how-to mode already knows the basics and wants the recipe for a specific task. A reader in reference mode wants accurate, complete, fact-table coverage of the API. A reader in explanation mode wants to understand a design decision.
+教程模式的读者在"做中学",要一条保证成功的引导路径;how-to 模式的读者已有基础,要完成特定任务的配方;参考模式的读者要准确、完整、事实表式的 API 覆盖;解释模式的读者要理解一个设计决策。
 
-The same person reads a project from each of these modes at different times. The same paragraph cannot serve all four — tutorials need handholding that would slow down a reference reader; reference needs completeness that would overwhelm a tutorial reader.
+同一个人会在不同时间以这四种模式读同一个项目。同一段话不可能同时服务四者——教程需要的保姆级铺垫会拖慢参考读者;参考需要的穷尽完备会压垮教程读者。
 
-## Why this matters as a coverage lens
+## 为什么这是有效的覆盖透镜
 
-A coverage map written in Diataxis terms gives you a deterministic answer to "did docs get updated?" — not "is there a README" but "is there a tutorial for this new skill, a how-to for the common task, a reference for the API, and an explanation for the non-obvious design choice?"
+用 Diataxis 词汇写的覆盖图,让"文档更新了吗"这个问题有了确定性答案——不是"有没有 README",而是"这个新 skill 有没有教程?常见任务有没有 how-to?API 有没有参考?非显而易见的设计选择有没有解释?"
 
-`/document-release` Step 1.5 walks the diff, extracts new public surface (skills, CLI flags, config options, API endpoints), and scores each entity across the four quadrants. Items with zero coverage become **critical gaps**. Items with only reference coverage (the most common failure mode in gstack's own history) become **common gaps**. Both land in the PR body where reviewers see them.
+`/document-release` 的步骤 1.5 遍历 diff,抽取新的公开面(skill、CLI 参数、配置项、API 端点),并对每个实体按四象限打分。零覆盖项成为**关键缺口**;只有参考覆盖的项(gstack 自身历史上最常见的失败模式)成为**常见缺口**。两者都会写进 PR 正文,评审者一眼可见。
 
-`/document-generate` writes docs in the four quadrants intentionally. It refuses to mix them: a tutorial does not get a "Configuration" section, a reference doc does not get a "What you'll build" paragraph. The skill's 9 steps go reference → explanation → how-to → tutorial because that ordering matches the dependency: reference fixes the vocabulary, explanation justifies the design, how-tos build on both, tutorials are the last and hardest.
+`/document-generate` 有意按四象限分别成文,并且拒绝混写:教程里不出现"配置"章节,参考文档里不出现"你将构建什么"段落。该 skill 的 9 个步骤按 参考 → 解释 → how-to → 教程 排序,因为这个顺序就是依赖顺序:参考确定词汇,解释论证设计,how-to 建立在前两者之上,教程最后写也最难写。
 
-## Trade-offs
+## 权衡
 
-**Diataxis adds vocabulary that readers must learn.** A user who's never heard of "reference vs explanation" might find the labels strange at first. The mitigation is that Diataxis labels are self-explanatory once you've seen them once, and the labels never appear in the docs themselves — they appear in the coverage map and PR body, where reviewers see them, not end users.
+**Diataxis 引入了读者必须学习的词汇。**没听过"reference vs explanation"的人初见标签会觉得怪。缓解因素:这些标签见一次就自解释,而且它们从不出现在文档正文里——只出现在覆盖图和 PR 正文中,面向评审者而非最终用户。
 
-**Four files instead of one.** A small skill might have one `docs/SKILL.md` file that mixes all four modes. Diataxis splits that into four. The mitigation: AI generation makes the four-file structure cheap, the cross-linking between quadrants is mechanical (every reference doc links to its how-to, every how-to links to its reference, etc.), and the gains in audit-ability are substantial — `/document-release` can score coverage automatically.
+**一个文件变四个。**小 skill 可能一个 `docs/SKILL.md` 就混写了四种模式,Diataxis 要求拆成四个。缓解因素:AI 生成让四文件结构成本极低,象限间交叉链接是机械操作(每篇参考链到对应 how-to,每篇 how-to 链回参考,以此类推),而可审计性的收益巨大——`/document-release` 能自动给覆盖率打分。
 
-**Diataxis is not the only good framework.** "Every page is page one" (Mark Baker), the four kinds of docs in the *Write the Docs* community, the Google developer documentation style guide — all have different cuts. gstack picked Diataxis because it has the strongest external adoption (CPython, Django, NumPy, FastAPI, etc.), which means downstream users have the highest chance of having seen the vocabulary before, and the quadrant labels translate cleanly to coverage-map signals.
+**Diataxis 不是唯一的好框架。**"Every page is page one"(Mark Baker)、*Write the Docs* 社区的四类文档、Google 开发者文档风格指南,切法各有不同。gstack 选 Diataxis 是因为它外部采用度最高(CPython、Django、NumPy、FastAPI 等),下游用户最可能见过这套词汇,而且象限标签能干净地映射为覆盖图信号。
 
-## Alternatives considered
+## 被否决的替代方案
 
-**"Just write README sections."** Tried implicitly across gstack's history. Failure mode: tutorials accumulated in README until READMEs were 800+ lines and nobody read them past line 50. Diataxis splits them into dedicated files, each discoverable from README's table of contents.
+**"往 README 里加章节就行。"** gstack 历史上隐性试过。失败模式:教程在 README 里越积越多,直到 800+ 行,没人读到第 50 行以后。Diataxis 把它们拆成独立文件,各自从 README 目录可达。
 
-**Custom in-house taxonomy.** Tempting because it could be tailored. Rejected because every team would invent their own vocabulary and `/document-release` would lose its cross-project audit power. Diataxis is the lingua franca.
+**自研内部分类法。**诱人,因为可以量身定制。否决原因:每个团队都会发明自己的词汇,`/document-release` 将失去跨项目审计能力。Diataxis 是通用语。
 
-**Auto-generated reference only.** Tried via tools like JSDoc / TypeDoc / Sphinx for many projects. Reference docs without explanation become impenetrable for newcomers; without tutorials, the API is hard to onboard onto. Reference is necessary but not sufficient.
+**只做自动生成的参考文档。**很多项目用 JSDoc / TypeDoc / Sphinx 试过。没有解释的参考文档对新手是天书;没有教程,API 很难上手。参考是必要条件,不是充分条件。
 
-**No documentation framework at all, just gut-check.** The status quo for most projects. Fails silently — users walk away rather than file issues, so the feedback loop is broken. Diataxis gives a structured signal even before users complain.
+**完全不用文档框架,凭感觉来。**多数项目的现状。静默失败——用户直接走人不提 issue,反馈回路断裂。Diataxis 在用户抱怨之前就给出结构化信号。
 
-## Related
+## 相关链接
 
-- **Reference for the skill that implements this:** [`document-generate/SKILL.md`](../document-generate/SKILL.md)
-- **Reference for the audit that uses this taxonomy:** [`document-release/SKILL.md`](../document-release/SKILL.md)
-- **Tutorial for using `/document-generate`:** [`tutorial-document-generate.md`](./tutorial-document-generate.md)
-- **How-to: document a shipped feature:** [`howto-document-a-shipped-feature.md`](./howto-document-a-shipped-feature.md)
-- **Diataxis homepage:** https://diataxis.fr/ — Procida's canonical reference for the framework
+- **实现该方法的 skill:** [`document-generate/SKILL.md`](../document-generate/SKILL.md)
+- **使用该分类法做审计的 skill:** [`document-release/SKILL.md`](../document-release/SKILL.md)
+- **`/document-generate` 使用教程:** [`tutorial-document-generate.md`](./tutorial-document-generate.md)
+- **How-to:为已上线功能补文档:** [`howto-document-a-shipped-feature.md`](./howto-document-a-shipped-feature.md)
+- **Diataxis 主页:** https://diataxis.fr/ —— Procida 的框架权威参考

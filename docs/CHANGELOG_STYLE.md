@@ -1,58 +1,44 @@
-# CHANGELOG entry format
+> 🌐 本文档由 [garrytan/gstack](https://github.com/garrytan/gstack) 翻译,英文原版见原项目。
 
-Moved verbatim from CLAUDE.md (token-load reduction). Read this BEFORE
-writing any `## [X.Y.Z]` CHANGELOG entry.
+# CHANGELOG 条目格式
 
-### Release-summary format (every `## [X.Y.Z]` entry)
+从 CLAUDE.md 原样迁出(为降低 token 负载)。写任何 `## [X.Y.Z]` 的 CHANGELOG 条目之前,先读本文。
 
-Every version entry in `CHANGELOG.md` MUST start with a release-summary section in
-the GStack/Garry voice, one viewport's worth of prose + tables that lands like a
-verdict, not marketing. The itemized changelog (subsections, bullets, files) goes
-BELOW that summary, separated by a `### Itemized changes` header.
+### 发布摘要格式(每个 `## [X.Y.Z]` 条目)
 
-The release-summary section gets read by humans, by the auto-update agent, and by
-anyone deciding whether to upgrade. The itemized list is for agents that need to
-know exactly what changed.
+`CHANGELOG.md` 里每个版本条目**必须**以 GStack/Garry 口吻的发布摘要开头:一屏篇幅的正文加表格,读起来像一句裁决,而不是营销文案。逐条明细(子章节、要点、文件)放在摘要**下方**,用 `### Itemized changes` 标题分隔。
 
-Structure for the top of every `## [X.Y.Z]` entry:
+发布摘要的读者是人类、自动更新 agent,以及所有在决定"要不要升级"的人;逐条明细是给需要精确知道改了什么的 agent 看的。
 
-1. **Two-line bold headline** (10-14 words total). Should land like a verdict, not
-   marketing. Sound like someone who shipped today and cares whether it works.
-2. **Lead paragraph** (3-5 sentences). What shipped, what changed for the user.
-   Specific, concrete, no AI vocabulary, no em dashes, no hype.
-3. **A "The X numbers that matter" section** with:
-   - One short setup paragraph naming the source of the numbers (real production
-     deployment OR a reproducible benchmark, name the file/command to run).
-   - A table of 3-6 key metrics with BEFORE / AFTER / Δ columns.
-   - A second optional table for per-category breakdown if relevant.
-   - 1-2 sentences interpreting the most striking number in concrete user terms.
-4. **A "What this means for [audience]" closing paragraph** (2-4 sentences) tying
-   the metrics to a real workflow shift. End with what to do.
+每个 `## [X.Y.Z]` 条目顶部的结构:
 
-Voice rules for the release summary:
-- No em dashes (use commas, periods, "...").
-- No AI vocabulary (delve, robust, comprehensive, nuanced, fundamental, etc.) or
-  banned phrases ("here's the kicker", "the bottom line", etc.).
-- Real numbers, real file names, real commands. Not "fast" but "~30s on 30K pages."
-- Short paragraphs, mix one-sentence punches with 2-3 sentence runs.
-- Connect to user outcomes: "the agent does ~3x less reading" beats "improved precision."
-- Be direct about quality. "Well-designed" or "this is a mess." No dancing.
+1. **两行加粗大标题**(合计 10-14 个词)。要像裁决,不要像营销。语气像一个今天刚上线、并且真的在乎它能不能跑的人。
+2. **导语段落**(3-5 句)。发了什么、对用户而言什么变了。具体、实在,不用 AI 腔词汇,不用破折号,不吹。
+3. **"The X numbers that matter" 章节**,包含:
+   - 一小段铺垫,说明数字来源(真实生产部署**或**可复现的基准,写明要跑的文件/命令)。
+   - 一张 3-6 个关键指标的表,带 BEFORE / AFTER / Δ 三列。
+   - 如有必要,再加一张按类别细分的可选表。
+   - 用 1-2 句话,以具体的用户视角解读最扎眼的那个数字。
+4. **"What this means for [人群]" 收尾段**(2-4 句),把指标落到真实工作流的变化上,最后告诉读者该做什么。
 
-Source material:
-- CHANGELOG previous entry for prior context.
-- Benchmark files or `/retro` output for headline numbers.
-- Recent commits (`git log <prev-version>..HEAD --oneline`) for what shipped.
-- Don't make up numbers. If a metric isn't in a benchmark or production data,
-  don't include it. Say "no measurement yet" if asked.
+发布摘要的语感规则:
+- 不用破折号(用逗号、句号、"...")。
+- 不用 AI 腔词汇(delve、robust、comprehensive、nuanced、fundamental 等)和禁用句式("here's the kicker"、"the bottom line" 等)。
+- 用真实数字、真实文件名、真实命令。不写"更快",要写"30K 页面约 30 秒"。
+- 段落要短,一针见血的单句和两三句的段落交替出现。
+- 落到用户结果上:"agent 的阅读量少约 3 倍"胜过"精度提升"。
+- 对质量直言不讳。"设计得不错"或"这很糟",都直说,别绕。
 
-Target length: ~250-350 words for the summary. Should render as one viewport.
+素材来源:
+- CHANGELOG 上一条目,承接上下文。
+- 基准文件或 `/retro` 输出,提供标题数字。
+- 近期提交(`git log <prev-version>..HEAD --oneline`),确认发了什么。
+- 不许编数字。指标不在基准或生产数据里就不写;被问到就答"暂无测量数据"。
 
-### Itemized changes (below the release summary)
+目标长度:摘要约 250-350 词,渲染为一屏。
 
-Write `### Itemized changes` and continue with the detailed subsections (Added,
-Changed, Fixed, For contributors). Same rules as the user-facing voice guidance
-above, plus:
+### 逐条明细(发布摘要下方)
 
-- **Always credit community contributions.** When an entry includes work from a
-  community PR, name the contributor with `Contributed by @username`. Contributors
-  did real work. Thank them publicly every time, no exceptions.
+写 `### Itemized changes`,然后接详细的子章节(Added、Changed、Fixed、For contributors)。同样遵守上面的用户侧语感规则,另外:
+
+- **必须署名社区贡献。** 条目包含社区 PR 的工作时,用 `Contributed by @username` 写明贡献者。贡献者付出了真实劳动,每一次都要公开致谢,无一例外。
